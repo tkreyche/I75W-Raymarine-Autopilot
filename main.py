@@ -1,4 +1,4 @@
-# signalk_ws_i75w.py - Optimized for Pimoroni Interstate 75 W (RP2350)
+*-++# signalk_ws_i75w.py - Optimized for Pimoroni Interstate 75 W (RP2350)
 # ========================================================================
 # Signal K WebSocket client with HUB75 LED matrix display
 #
@@ -12,13 +12,12 @@
 # DISPLAY: 64x64 RGB LED Matrix
 # ------------------------------
 # Layout (three horizontal sections):
-# • Top Section (0-21): Autopilot mode + Current heading
-#   - "C" for standby (Compass display mode)
-#   - "A" for auto (Auto mode)
+# • Top Section (0-21): Always visible
+#   - "C" indicates Compass Heading, Signal K calls it navigation.headingMagnetic
 #   - Three-digit heading: "045"
 # • Middle Section (22-42): Target heading (auto mode only)
-#   - "T" for target + Three-digit target heading: "270"
-#   - Only displayed when autopilot is in auto mode
+#   - "A" for Auto Mode + Three-digit target heading: "270", Signal K call it steering.autopilot.target.headingMagnetic
+#   - Only displayed when autopilot is in auto mode 
 # • Bottom Section (43-63): Heading difference (auto mode only)
 #   - Sign and three-digit value: "+015" or "-020"
 #   - Positive = turn right to reach target, Negative = turn left
@@ -41,7 +40,8 @@
 # this will put the code in the lib folder
 
 import math
-import secrets
+
++i+mport secrets
 import time
 import gc
 import network
