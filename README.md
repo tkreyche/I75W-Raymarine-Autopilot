@@ -1,6 +1,6 @@
 ## I75W Display for Raymarine Tilllerpilot
 
-### Important Notice
+### Target Audience
 This project is for DIY sailors with some familiarity with electronics projects. For those not inclined, there are commerically available (and more expensive) displays available.
 
 ### Introduction
