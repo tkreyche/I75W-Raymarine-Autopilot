@@ -6,7 +6,7 @@ This project is for DIY sailors with some familiarity with electronics projects.
 ### Introduction
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The one-line display on the Tillerpilot is typically mounted near the stern of a boat and is inconvient to use. This display can be mounted on a mast or other more visible location.
 
-Ideally, the Tillerpilot is controlled remotely rather than using the buttons on the unit. A great option for DIY sailors is to use NautiControl ST Wirelss control module, as an alternative to the expensive Raymarine control. This I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl has a web UI but I find it problematic to use a mobile phone on a small boat.
+Ideally, the Tillerpilot is controlled remotely rather than using the buttons on the unit. A great option for DIY sailors is to use NautiControl ST Wirelss control module, as an alternative to the expensive Raymarine control. This I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl can run a web UI on a mobile phone, but I can't manage that lively sailing conditions.
 
 ### Hardware
 The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
