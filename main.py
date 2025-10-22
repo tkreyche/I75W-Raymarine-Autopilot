@@ -1,4 +1,4 @@
-*-++# signalk_ws_i75w.py - Optimized for Pimoroni Interstate 75 W (RP2350)
+# signalk_ws_i75w.py - Optimized for Pimoroni Interstate 75 W (RP2350)
 # ========================================================================
 # Signal K WebSocket client with HUB75 LED matrix display
 #
@@ -41,7 +41,7 @@
 
 import math
 
-+i+mport secrets
+import secrets
 import time
 import gc
 import network
