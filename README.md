@@ -4,7 +4,7 @@
 ### Short Description
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. It's usually not convenient to view the one-line display on the Tillerpilot, typically mounted near the stern of a boat.
 
-It is intended to be a companion to the NautiControl ST Wirelss module, although it can be used independently.
+It is intended to be a companion to the NautiControl ST Wirelss module and allows a sailor to get immediate feedback when operating the Tillerpilot remote control.
 
 ### Hardware
 Remote LED Matrix Display for Raymarine autopilots using Pimoroni I75W board
