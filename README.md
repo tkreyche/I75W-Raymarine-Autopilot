@@ -4,9 +4,7 @@
 ### Introduction
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The one-line display on the Tillerpilot is typically mounted near the stern of a boat and is inconvient to use. This display can be mounted on a mast or other more visible location.
 
-Ideally, the Tillerpilot is controlled remotely rather than using the buttons on the unit. A great option for DIY sailors is to use NautiControl ST Wirelss control module, as an alternative to the expensive Raymarine control. This I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module.
-
-It allows a sailor to get immediate feedback when operating the Tillerpilot remotely. NautiControl has a web UI but on small boats using a mobile phone is problematic.
+Ideally, the Tillerpilot is controlled remotely rather than using the buttons on the unit. A great option for DIY sailors is to use NautiControl ST Wirelss control module, as an alternative to the expensive Raymarine control. This I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl has a web UI but I find using a mobile phone problematic on small wet boats.
 
 This project is for DIY sailors. For those not inclined, there are commerically available (expensive) displays available.
 
@@ -44,7 +42,7 @@ Common configuration items are stored in a secrets.py file, so the main code fil
 There are optional flags available to print performance data to a console.
 
 ### Software Installation on the I75W Board
-1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto he I75W board.
+1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
 2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. Unfortunately, you can't just drop the files onto the device mounted as a USB drive.
 3) Run Thonny, connect the I75W board with a USB cable. Under options, set the Interpreter to MicroPython (Raspberry Pi Pic) and set the Port to the USB serial port the board is using.
 4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there many tutorials for using Thonny with these boards.
