@@ -1,4 +1,4 @@
-# I75W-Raymarine-Autopilot
+# I75W Display for Raymarine Tilllerpilot
 Remote LED Matrix Display for Raymarine autopilots using Pimoroni I75W board
 
 This project uses off-the-shelf hardware to create a daylight-visible display for Raymarine tillerpilots, such as the ST1000+.
