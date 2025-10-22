@@ -19,6 +19,10 @@ This project requires that you have a Signal K server, typically running on a Ra
 
 In all cases, the I75W board and display connects wirelessly to the Signal K server. The connection uses the Signal K websockets interface for lowest latency.
 
+Links:
+https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339
+
+
 
 
 
