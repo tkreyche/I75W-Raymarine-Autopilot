@@ -9,7 +9,7 @@ This display is intended to be a companion to the NautiControl ST Wirelss module
 This project is for DIY sailors. There are more expensive commerically available display options.
 
 ### Hardware
-The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm).  The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
+The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
 
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix display, but they are expensive - intended for use in outdoor venues such as sports stadiums.
@@ -25,7 +25,7 @@ This project requires that you have a Signal K server, typically running on a Ra
 
 In all cases, the I75W board and display connects wirelessly to the Signal K server. The connection uses the Signal K websockets interface for lowest latency.
 
-### Code Description (optional read)
+### Software Description (optional read)
 The code is written in Micropython with the help of Claude.ai.
 The connection uses the Signal K websockets interface for lowest latency.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
