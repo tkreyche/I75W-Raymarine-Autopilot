@@ -20,7 +20,7 @@ The LED matrix is used because it's bright, inexpensive, readily availble and up
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system. It can be powered from a USB-C cable or a simple 5v power cable.
 
 ### Tillerpilot
-This project depends on using a Raymarine Tillerpilot. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
+This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
 
 ### Signal K Server
 This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server.
