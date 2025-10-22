@@ -1,7 +1,7 @@
 ## I75W Display for Raymarine Tilllerpilot
 
 ### Important Notice
-This project is for DIY sailors with some familiarity with electronics projets. For those not inclined, there are commerically available (and more expensive) displays available.
+This project is for DIY sailors with some familiarity with electronics projects. For those not inclined, there are commerically available (and more expensive) displays available.
 
 ### Introduction
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The one-line display on the Tillerpilot is typically mounted near the stern of a boat and is inconvient to use. This display can be mounted on a mast or other more visible location.
