@@ -44,9 +44,9 @@ Common configuration items are stored in a secrets.py file, so the main code fil
 There are optional flags available to print performance data to a console.
 
 ### Installation on I75W Board
-The Pimoroni I75W web site has additional details. The basic steps are:
-1) Reset the I75W board while plugged into a USB port on a computer, and it will show up as a disk drive.
-2) Update the I75W board using Pimoroni's lastest custom micropython build.
+1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto he I75W board.
+2) There are a few options for loading Micropython code files onto the board, the simplest is the use the minminal IDE called Thonny. It's a free download. VS Code can be used but it's more complicated to set up. 
+
 3) Follow these instructions to add a websocket library: https://pypi.org/project/micropython-async-websocket-client/
 5) Drop in the secrets file, modified for the wireless network, and the program file into the root.
 
