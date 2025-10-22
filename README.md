@@ -9,10 +9,7 @@ This display is intended to be a companion to the NautiControl ST Wirelss module
 This project is for DIY sailors. There are more expensive commerically available display options.
 
 ### Hardware
-Remote LED Matrix Display for Raymarine autopilots using Pimoroni I75W board
-
-
-The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). These are widely available in different configurations. The 2mm pitch offers higher LED density and a compact package.
+The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm).  The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
 
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix display, but they are expensive - intended for use in outdoor venues such as sports stadiums.
