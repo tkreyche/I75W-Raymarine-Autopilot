@@ -19,6 +19,9 @@ LED matrix displays can use a lot of power, dependent on the display size and ho
 
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system.
 
+### Tillerpilot
+This project depends on using a Raymarine Tillerpilot. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing and use of an outdated data protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
+
 ### Signal K Server
 This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The tillerpilot sends data using the Seatalk1 protocol to the Signal K server. There are several connection options:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is described in the Signal K documentation for Seatalk.
