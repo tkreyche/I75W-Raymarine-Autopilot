@@ -8,7 +8,7 @@ The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). These are wid
 
 The display is not waterproof and will require a case. Later, I'll discuss a case build using low-reflective acrylic front panel. It's possible to buy a waterproof matrix, but they are expensive - intended for use in outdoor venues such a sports stadiums.
 
-LED matrix display can use a lot of power, but it's dependent on the size and how many LEDs are turned on at a time. For a limited text-only display the power consumption is reasonable, about TK.
+LED matrix display can use a lot of power, but that's dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable, about TK. The display is capable of fancy graphics but this version doesn't have any. Pimoroni has examples.
 
 
 
