@@ -6,7 +6,7 @@ The display can used when it is not convenient to view the small display on the 
 
 The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). These are widely available and in different configurations.
 
-The display is not waterproof and will require a case. Later, I'll discuss a case build using low-reflective acrylic. It's possible to buy a waterproof version, but they are expensive - intended for use in outdoor venues such a sports stadiums.
+The display is not waterproof and will require a case. Later, I'll discuss a case build using low-reflective acrylic front panel. It's possible to buy a waterproof matrix, but they are expensive - intended for use in outdoor venues such a sports stadiums.
 
 
 
