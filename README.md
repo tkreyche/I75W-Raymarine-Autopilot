@@ -19,13 +19,16 @@ This project requires that you have a Signal K server, typically running on a Ra
 
 In all cases, the I75W board and display connects wirelessly to the Signal K server. The connection uses the Signal K websockets interface for lowest latency.
 
-Code Description
+#Code Description
 The code is written in Micropython with the help of Claude.ai.
 The connection uses the Signal K websockets interface for lowest latency.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
 Common configuration items are in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
 
-Links:
+#Installation
+xxxxx
+
+#Links:
 
 https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339
 
