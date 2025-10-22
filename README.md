@@ -6,7 +6,7 @@ This project uses off-the-shelf hardware to create an remote daylight-visible di
 
 This display is intended to be a companion to the NautiControl ST Wirelss module and allows a sailor to get immediate feedback when operating the Tillerpilot remote control.
 
-This project is for DIY sailors. There are more expensive commerically available display options.
+This project is for DIY sailors. There are expensive, commerically available displays available.
 
 ### Hardware
 The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
