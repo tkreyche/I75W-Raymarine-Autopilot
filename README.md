@@ -2,9 +2,11 @@
 
 
 ### Introduction
-This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The one-line display on the Tillerpilot is typically mounted near the stern of a boat and is inconvient to use.
+This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The one-line display on the Tillerpilot is typically mounted near the stern of a boat and is inconvient to us
 
-It's ideal to control the Tillerpilot remotely, and this display is intended to be a companion to the NautiControl ST Wirelss control module. It allows a sailor to get immediate feedback when operating the Tillerpilot remotely. NautiControl has a web UI but on small boats using a mobile phone is problematic.
+Idally, the Tillerpilot is controlled remotely. A great option for DIY sailors is to use NautiControl ST Wirelss control module, as an alternative to the expensive Raymarine control. This display allows sailors to get immediate visual feedback from their Tillerpilot when controlling is using the ST wireless module.
+
+It allows a sailor to get immediate feedback when operating the Tillerpilot remotely. NautiControl has a web UI but on small boats using a mobile phone is problematic.
 
 This project is for DIY sailors. For those not inclined, there are commerically available (expensive) displays available.
 
@@ -31,7 +33,7 @@ There are several ways to send data from the Tillerpilot to the Signal K server:
 2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired. This Hat is widely used and also handles NMEA2000 connections.
 3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. The Tillerpilot is hard-wired to the NautiContol module. TK needs to be tested.
 
-
+There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
 ### Software Description (optional read)
 The code is written in Micropython with the help of Claude.ai.
