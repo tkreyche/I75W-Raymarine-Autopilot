@@ -23,7 +23,7 @@ Code Description
 The code is written in Micropython with the help of Claude.ai.
 The connection uses the Signal K websockets interface for lowest latency.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
-Common configuration items are in a secrets.py file, so the main code doesn't need to be edited.
+Common configuration items are in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
 
 Links:
 
