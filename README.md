@@ -36,20 +36,17 @@ There are several ways to send data from the Tillerpilot to the Signal K server:
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
 ### Software Description (optional read)
-The code is written in Micropython with the help of Claude.ai.
-The connection uses the Signal K websockets interface for lowest latency.
+The code is written in Micropython with the help of Claude.ai. The code runs on single RP2050 core, and profiling shows there is plenty of headroom.
+The connection uses the Signal K websockets interface for lowest latency communications.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
-Common configuration items are in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
- The connection uses the Signal K websockets interface for lowest latency.
-Runs on single core, there is plenty of headroom.
+Common configuration items are stored in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
 
-Performance flags available.
-
+There are optional flags available to print performance data to a console.
 
 ### Installation on I75W Board
-The Pimoroni I75W web site has additional details. Basic steps:
-1) Reset the I75W board while plugged into a USB port, and it will show up as a disk drive.
-2) Update the I75W board using their lastest custom micropython build.
+The Pimoroni I75W web site has additional details. The basic steps are:
+1) Reset the I75W board while plugged into a USB port on a computer, and it will show up as a disk drive.
+2) Update the I75W board using Pimoroni's lastest custom micropython build.
 3) Follow the instructions here to add a websocket library to a lib folder: https://pypi.org/project/micropython-async-websocket-client/
 5) Drop in the secrets file, modified for the wireless network, and the program file.
 
