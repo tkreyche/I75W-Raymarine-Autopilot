@@ -14,8 +14,8 @@ The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display 
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix display, but they are expensive - intended for use in outdoor venues such as sports stadiums.
 
-### Power 
-LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable. The system is capable of fancy graphics but this version doesn't use any (see Pimoroni for examples). The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink).
+### LED Matrix and Power 
+The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable. The system is capable of fancy graphics but this version doesn't use any (see Pimoroni for examples). 
 
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system.
 
