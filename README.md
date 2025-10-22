@@ -17,8 +17,9 @@ This project requires that you have a Signal K server, typically running on a Ra
 2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired.
 3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. The Tillerpilot is hard-wired to the NautiContol module. TK needs to be tested.
 
+In all cases, the I75W board and display connects wirelessly to the Signal K server. The connection uses the Signal K websockets interface for lowest latency.
 
-The I75W board connects wirelessl
+
 
 
 
