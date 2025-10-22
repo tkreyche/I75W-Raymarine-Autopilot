@@ -23,7 +23,7 @@ The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system.
 This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
 
 ### Signal K Server
-This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server and optionally the NautiControl module. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
+This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server and the NautiControl module if you want remote control. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
 
 There are several options for sending data from the Tillerpilot to the Signal K server:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
