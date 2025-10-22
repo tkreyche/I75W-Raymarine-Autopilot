@@ -43,7 +43,11 @@ Performance flags available.
 
 
 ### Installation on I75W Board
-xxxxx
+The Pimoroni I75W web site has additional details. Basic steps:
+1) Reset the I75W board while plugged into a USB port, and it will show up as a disk drive.
+2) Update the I75W board using their lastest custom micropython build.
+3) Follow the instructions here to add a websocket library to a lib folder: https://pypi.org/project/micropython-async-websocket-client/
+5) Drop in the program file and a secrets file, modified for the wireless network.
 
 ### Links:
 
