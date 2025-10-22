@@ -47,8 +47,8 @@ There are optional flags available to print performance data to a console.
 The Pimoroni I75W web site has additional details. The basic steps are:
 1) Reset the I75W board while plugged into a USB port on a computer, and it will show up as a disk drive.
 2) Update the I75W board using Pimoroni's lastest custom micropython build.
-3) Follow the instructions here to add a websocket library to a lib folder: https://pypi.org/project/micropython-async-websocket-client/
-5) Drop in the secrets file, modified for the wireless network, and the program file.
+3) Follow these instructions to add a websocket library: https://pypi.org/project/micropython-async-websocket-client/
+5) Drop in the secrets file, modified for the wireless network, and the program file into the root.
 
 ### Links:
 
