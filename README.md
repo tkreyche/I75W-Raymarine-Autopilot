@@ -4,7 +4,7 @@ Remote LED Matrix Display for Raymarine autopilots using Pimoroni I75W board
 This project uses off-the-shelf hardware to create a daylight-visible display for Raymarine tillerpilots, such as the ST1000+.
 It is intended to be a companion to the NautiControl ST Wirelss module, although that's not essential
 
-The display can used when it is not convenient to view the small display on the tillerpilot, and when there is no other (typically expensive) display available.
+The display can used when it is not convenient to view the small display on the tillerpilot, and when there is no other (typically expensive) marine display available.
 
 The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). These are widely available in different configurations.
 
