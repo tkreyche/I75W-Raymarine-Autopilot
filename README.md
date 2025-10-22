@@ -15,7 +15,7 @@ LED matrix display can use a lot of power, but that's dependent on the display s
 This project requires that you have a Signal K server, typically running on a Raspbery Pi. The tillerpilot sends data using the Seatalk1 protocol to the Signal K server. There are several connection options:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is described in the Signal K documentation, and is simple.
 2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired.
-3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. TK needs to be tested.
+3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. The Tillerpilot is hard-wired to the NautiContol module. TK needs to be tested.
 
 
 The I75W board connects wirelessl
