@@ -42,7 +42,7 @@ There are optional flags available to print performance data to a console.
 
 ### Software Installation on the I75W Board
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
-2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. Unfortunately, you can't just drop the files onto the device mounted as a USB drive.
+2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. It's not possible to just drop the files onto the device mounted as a USB drive.
 3) Run Thonny, connect the I75W board with a USB cable. Under options, set the Interpreter to MicroPython (Raspberry Pi Pic) and set the Port to the USB serial port the board is using.
 4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there many tutorials for using Thonny with these boards.
 3) Follow these instructions to add a websocket library: https://pypi.org/project/micropython-async-websocket-client/
