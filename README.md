@@ -25,6 +25,11 @@ The connection uses the Signal K websockets interface for lowest latency.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
 Common configuration items are in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
 
+Runs on single core, there is plenty of headroom.
+
+Performance flags available.
+
+
 # Installation
 xxxxx
 
