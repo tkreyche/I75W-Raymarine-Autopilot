@@ -20,7 +20,7 @@ LED matrix displays can use a lot of power, dependent on the display size and ho
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system.
 
 ### Signal K Server
-This project requires that you have a Signal K server, typically running on a Raspbery Pi. The tillerpilot sends data using the Seatalk1 protocol to the Signal K server. There are several connection options:
+This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The tillerpilot sends data using the Seatalk1 protocol to the Signal K server. There are several connection options:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is described in the Signal K documentation for Seatalk.
 2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired.
 3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. The Tillerpilot is hard-wired to the NautiContol module. TK needs to be tested.
