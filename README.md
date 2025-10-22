@@ -6,7 +6,7 @@ It is intended to be a companion to the NautiControl ST Wirelss module, although
 
 The display can used when it is not convenient to view the small display on the tillerpilot, and when there is no other (typically expensive) marine display available.
 
-The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). These are widely available in different configurations. The 2mm pitch offers higher density in a more compact package.
+The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). These are widely available in different configurations. The 2mm pitch offers higher LED density in a more compact package.
 
 The display is not waterproof and will require a case. Later, I'll discuss a case build using low-reflective acrylic front panel. It's possible to buy a waterproof matrix, but they are expensive - intended for use in outdoor venues such a sports stadiums.
 
