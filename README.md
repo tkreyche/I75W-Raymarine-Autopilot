@@ -12,9 +12,9 @@ The display is not waterproof and will require a case. Later, I'll discuss a cas
 
 LED matrix display can use a lot of power, but that's dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable, about TK. The display is capable of fancy graphics but this version doesn't have any. Pimoroni has examples.
 
-This project requires that you have a Signal K server, typically running on a Raspbery Pi. Tillerpilots send data using the Seatalk1 protocol, and this must be sent to Signal K server. There are several options:
-1) Use an optoisolater to send data to a Raspbery Pi port - this is described in the Signal K documentation, and is simple.
-2) Use a MacArthur Hat, which has a Seatalk1 port.
+This project requires that you have a Signal K server, typically running on a Raspbery Pi. The tillerpilot sends data using the Seatalk1 protocol to the Signal K server. There are several connection options:
+1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is described in the Signal K documentation, and is simple.
+2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired.
 3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. TK needs to be tested.
 
 
