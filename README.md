@@ -4,6 +4,8 @@
 ### Introduction
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The one-line display on the Tillerpilot is typically mounted near the stern of a boat and is inconvient to use. This display can be mounted on a mast or other more visible location.
 
+This project is a companion to the NautiControl ST Wirelss control module, although it can be used independently. That module enables remote wireless control of the Tillerpilot
+
 Ideally, the Tillerpilot is controlled remotely rather than using the buttons on the unit. A great option for DIY sailors is to use NautiControl ST Wirelss control module, as an alternative to the expensive Raymarine control. This I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl has a web UI but I find using a mobile phone problematic on small sail boats.
 
 This project is for DIY sailors. For those not inclined, there are commerically available (expensive) displays available.
