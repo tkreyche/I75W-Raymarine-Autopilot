@@ -1,5 +1,7 @@
 ## I75W Display for Raymarine Tilllerpilot
 
+<img src="stby_mode_sm.jpg" width="300"><img src="auto_mode_sm.jpg" width="300">
+
 ### Target Audience
 This project is for DIY sailors with some familiarity with electronics projects. For those not inclined, there are commerically available (and more expensive) displays available.
 
