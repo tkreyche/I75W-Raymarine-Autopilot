@@ -28,10 +28,10 @@ This project depends on using a Raymarine Tillerpilot. These devices are somewha
 This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server.
 The I75W board and display connects wirelessly to the Signal K server.
 
-There are several ways to send data from the Tillerpilot to the Signal K server:
+There are several options for sending data from the Tillerpilot to the Signal K server:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
-2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired. This Hat is widely used and also handles NMEA2000 connections.
-3) Send the data wireless to the Signal K server from a NautiControl ST Wirelss module. The Tillerpilot is hard-wired to the NautiContol module. TK needs to be tested.
+2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wires the Tillpilot cable. This Hat is widely used and also handles NMEA2000 connections.
+3) Send the data wirelessly to the Signal K server from a NautiControl ST Wirelss module. The Tillerpilot is hard-wired to the NautiContol module.
 
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
