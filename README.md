@@ -26,7 +26,7 @@ This project depends on using a Raymarine Tillerpilot. These devices are somewha
 
 ### Signal K Server
 This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server.
-The I75W board and display connects wirelessly to the Signal K server.
+The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
 
 There are several options for sending data from the Tillerpilot to the Signal K server:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
