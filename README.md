@@ -13,6 +13,21 @@ This project uses off-the-shelf hardware to create an remote daylight-visible di
 
 The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl can run a web UI on a mobile phone, but I can't manage that in typical sailing conditions.
 
+### What the Display Shows
+The current software only supports the two primary modes for the Tillerpilot: Standby Mode and Auto Mode.
+
+__Standby Mode__
+The top line show "C" (for compass) and the magnetic compass heading. Signal K calls this navigation.headingMagnetic. 
+No other lines are shown.
+
+__Auto Mode Mode__
+The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading. Signal K calls this navigation.headingMagnetic. 
+The middle line shows "A" (for Auto) and the target heading. Signal K calls this steering.autopilot.target.headingMagnetic.
+The bottom line shows the difference between the two...this is a little redundant.
+
+__Status Indicator__
+There is a blinking status indicator in the lower right corner. It's green if receiving fresh data from the Signal K server and red if it is not.
+
 ### Hardware
 The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
 
