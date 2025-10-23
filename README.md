@@ -14,7 +14,7 @@ This project uses off-the-shelf hardware to create an remote daylight-visible di
 The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl can run a web UI on a mobile phone, but I can't manage that in typical sailing conditions.
 
 ### What the Display Shows
-The current software only supports the two primary modes for the Tillerpilot: Standby Mode and Auto Mode.
+The current software only supports the two primary modes for the Tillerpilot: Standby Mode and Auto Mode. It emulates what is shown on the Tillerpilot screen.
 
 __Standby Mode__
 The top line show "C" (for compass) and the magnetic compass heading. Signal K calls this navigation.headingMagnetic. 
