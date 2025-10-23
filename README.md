@@ -37,7 +37,7 @@ __Status Indicator:__
 There is a blinking status indicator in the lower right corner. It's green if receiving fresh data from the Signal K server and red if it is not.
 
 ### Hardware
-The hardware is a Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
+The hardware is an off-the-shelf Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes.
 
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
