@@ -16,7 +16,7 @@ The key component to make this a complete solution is a Nauti-Control ST control
 The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl can run a web UI on a mobile phone, but I can't manage that in typical sailing conditions.
 
 ### What the Display Shows
-The display emulates what is shown on the Tillerpilot one-line screen. Current software only supports the two primary mode: Standby and Auto. 
+The display emulates what is shown on the Tillerpilot one-line screen. Current software only supports the two primary modes: Standby and Auto. 
 
 __Standby Mode:__
 
