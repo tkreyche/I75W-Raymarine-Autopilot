@@ -9,7 +9,7 @@
 This project is for DIY sailors with some familiarity with electronics projects. For those not inclined, there are commerically available (and more expensive) displays available.
 
 ### Introduction
-This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The Tillerpilot is typically mounted near the stern of a boat, and it is incovenient to view the display and change control values with the buttons. This display can be mounted in an immediately visible location. 
+This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The Tillerpilot is typically mounted near the stern of a boat, and it is incovenient to view the display and change control values with the buttons. This display can be mounted in an better location. 
 
 The key component to make this a complete solution is a Nauti-Control ST control module, with a handheld wireless keypad. You can use the I75W display by itself, but it's only half the solution.
 
