@@ -64,10 +64,10 @@ There may be future options to send Tillerpilot data from a NautiControl ST Wire
 The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
 The connection uses the Signal K websockets interface for lowest latency communications.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
-The wireless configuration supports both DHCP and a staic IP address.
+The wireless configuration supports both DHCP and a static IP address.
 Common configuration items are stored in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
 There are optional flags available to print performance data to a console.
-There is a gratuitous splash screen to demo the graphics capabilities of the board, but the working display is simple text to emulate the Tillerpilot display.
+There is a splash screen to demo the graphics capabilities of the board, but the working display is simple text that emulates the Tillerpilot display.
 
 ### Software Installation on the I75W Board
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
