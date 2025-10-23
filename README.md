@@ -17,7 +17,7 @@ The I75W Display allows sailors to get immediate visual feedback from their Till
 The current software only supports the two primary modes for the Tillerpilot: Standby Mode and Auto Mode. It emulates what is shown on the Tillerpilot screen.
 
 __Standby Mode__
-The top line show "C" (for compass) and the magnetic compass heading. Signal K calls this navigation.headingMagnetic. 
+The top line show "C" (for compass) and the magnetic compass heading. Signal K calls this navigation.headingMagnetic. This value depends on the accuracy of the Tillerpilot calibration and will probably differ from other instruments.
 No other lines are shown.
 
 __Auto Mode Mode__
