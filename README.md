@@ -6,7 +6,7 @@
 > **These are bad photos and will be replaced soon! They don't show the actual display brightness!**
 
 ### Target Audience
-This project is for DIY sailors with some familiarity with electronics projects. For those not inclined, there are commerically available (and more expensive) displays available.
+This project is for DIY sailors with some familiarity with electronics projects. For those not inclined, there are commerically available (and more expensive) displays available. Note that I'm not selling anything: this if FYI only.
 
 ### Introduction
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. The Tillerpilot is typically mounted near the stern of a boat, and it is incovenient to view the display and change control values with the buttons. This display can be mounted in an better location. 
