@@ -37,7 +37,7 @@ __Status Indicator:__
 There is a blinking status indicator in the lower right corner. It's green if receiving fresh data from the Signal K server and red if it is not.
 
 ### Hardware
-The hardware is an off-the-shelf Pimoroni I75W board driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes. Pimoroni has a lot of info on their web site, as does Adafruit (who sells a different type of matrix driver).
+The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes. Pimoroni has a lot of info on their web site, as does Adafruit (who sells a different type of matrix driver).
 
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
@@ -51,7 +51,7 @@ The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system.
 This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
 
 ### Signal K Server
-This project requires a Signal K server, typically running on a Raspbery Pi, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server and the NautiControl module if you want remote control. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
+This project requires a Signal K server, typically running on a Raspbery Pi 4B or 5, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server and the NautiControl module if you want remote control. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
 
 There are several options for sending data from the Tillerpilot to the Signal K server:
 1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
@@ -61,7 +61,7 @@ There are several options for sending data from the Tillerpilot to the Signal K 
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
 ### Software Description (optional read)
-The code is written in Micropython with the help of Claude.ai. The code runs on single RP2050 core, and profiling shows there is plenty of headroom.
+The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
 The connection uses the Signal K websockets interface for lowest latency communications.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
 The wireless configuration supports both DHCP and a staic IP address.
@@ -72,8 +72,8 @@ There is a gratuitous splash screen to demo the graphics capabilities of the boa
 ### Software Installation on the I75W Board
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
 2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. It's not possible to just drop the files onto the device mounted as a USB drive.
-3) Run Thonny, connect the I75W board with a USB cable. Under options, set the Interpreter to MicroPython (Raspberry Pi Pic) and set the Port to the USB serial port the board is using.
-4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there many tutorials for using Thonny with these boards.
+3) Run Thonny, connect the I75W board with a USB cable. Under options, set the Interpreter to MicroPython (Raspberry Pi Pico) and set the Port to the USB serial port the board is using.
+4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there tutorials for using Thonny with these boards.
 3) Follow these instructions to add a websocket library: https://pypi.org/project/micropython-async-websocket-client/
 5) Drop in the secrets file, modified for the wireless network, and the program file into the root.
 
