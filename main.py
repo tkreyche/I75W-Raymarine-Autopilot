@@ -40,9 +40,6 @@
 # Best for: Client-only projects, such as an IoT sensor sending data to a remote server
 # Usage:
 #>>> import mip
-
-
-
 #>>> mip.install("github:Vovaman/micropython_async_websocket_client/async_websocket_client/ws.py")
 # this will put the code in the lib folder
 
@@ -1823,3 +1820,4 @@ if __name__ == "__main__":
         print("\n\nFATAL ERROR:", e)
         import sys
         sys.print_exception(e)
+
