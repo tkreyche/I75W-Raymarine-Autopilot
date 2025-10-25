@@ -1,10 +1,9 @@
-# =============================================================
 # secrets.py - Configuration file for Signal K WebSocket client
 # =============================================================
 
 # WiFi Credentials
-SSID = "my wireless lan"
-PASSWORD = "my password"
+SSID = "Bluehouse"
+PASSWORD = "1010a1010b1010cat"
 
 # Static IP Configuration (Optional)
 # -----------------------------------
@@ -32,7 +31,6 @@ COLOR_COMPASS = (255,255,255)
 COLOR_TARGET = (255,255,255)
 COLOR_ERROR = (255,0,0)
 COLOR_DIFF = (0,0,255)
-
 # Performance Tuning
 HEADING_SMOOTHING = 0.9  # EMA smoothing factor (0.0-1.0)
                          # Lower = smoother but slower response
@@ -40,9 +38,16 @@ HEADING_SMOOTHING = 0.9  # EMA smoothing factor (0.0-1.0)
 
 # Debug Options
 # Performance tuning
-DEBUG_TIMING = False # Set to True to print timing diagnostics for display updates
+DEBUG_TIMING = True # Set to True to print timing diagnostics for display updates
 DEBUG_WS = True     # Set to True to track and print WebSocket response time statistics
 
+LOG_ERRORS_TO_FILE = True  # Enable error logging
+LOG_FILE_PATH = '/error_log.txt'  # Where to save logs
+LOG_FILE_MAX_SIZE = 50000  # Max size before rotation (bytes)
+
+
+# Splash Screen
+RUN_SPLASH = False
 
 # EXAMPLE: Static IP Configuration
 # ---------------------------------
