@@ -1,6 +1,7 @@
 #!/bin/bash
 # SignalK Heartbeat Plugin Installer
 # Sends a heartbeat every 10 seconds via WebSocket for connection monitoring
+# Designed and tested on a SignalK server installed on a Raspberry Pi 5
 
 echo "Installing SignalK Heartbeat Plugin..."
 
@@ -81,4 +82,5 @@ echo "2. Go to Server → Plugin Config"
 echo "3. Find 'Heartbeat' and toggle it to Active"
 echo "4. The plugin will send updates to 'environment.heartbeat' every 30 seconds"
 echo ""
+
 echo "Monitor the path 'environment.heartbeat' in your WebSocket stream."
