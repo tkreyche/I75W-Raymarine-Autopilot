@@ -1,6 +1,9 @@
 #!/bin/bash
 # SignalK Heartbeat Plugin Installer
 # Sends a heartbeat every 10 seconds via WebSocket for connection monitoring
+# It makes it easier for a remote display to tell if the data from the SignalK server is updating
+# The data from the Raymarine Tillerpilot is considered stale if the magnetic heading is not updated within 30 seconds
+# For best fault detection, these are handled as two separate cases
 # Designed and tested on a SignalK server installed on a Raspberry Pi 5
 
 echo "Installing SignalK Heartbeat Plugin..."
@@ -84,3 +87,4 @@ echo "4. The plugin will send updates to 'environment.heartbeat' every 30 second
 echo ""
 
 echo "Monitor the path 'environment.heartbeat' in your WebSocket stream."
+
