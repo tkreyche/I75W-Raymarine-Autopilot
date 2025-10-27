@@ -11,7 +11,10 @@ This project is for DIY sailors who have skills and interest in electronics proj
 ### Statement of Intent
 I'm not selling anything: the hardware is readily available from 3rd parties and the code here is free to use at your own risk.
 
-### Introduction
+### Tillerpilot
+This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
+
+### General Description
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. A Tillerpilot is typically mounted near the stern of a boat, and it's incovenient to view the display. This display can be mounted in an better location. 
 
 You can use the I75W display by itself, but it only solves half the problem. It's also inconvenient to operate the Tillerpilot from the stern. The key component for a complete solution is a Nauti-Control ST control module, with a handheld wireless keypad. 
@@ -56,8 +59,7 @@ The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical siz
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system. It can be powered from a USB-C cable or a simple 5v power cable.
 LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable.
 
-### Tillerpilot
-This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
+
 
 ### Signal K Server
 This project requires a Signal K server, typically running on a Raspbery Pi 4B or 5, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server. If you want remote controler. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
