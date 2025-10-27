@@ -66,7 +66,6 @@ There are several options for sending data from the Tillerpilot to the Signal K 
 
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
-
 ### Troubleshooting Signal K Connections
 If you having seeing any unexpected results, you can run the debug python script "debug_signalk.py" and it will report on the Signalk K responses. This script outputs to the console of a Python IDE such as Thonny. There is no output to the LED matrix. Sample results are included in the program comments. 
 
@@ -81,7 +80,7 @@ There is a splash screen to demo the graphics capabilities of the board, but the
 Enabling debugging will write error messages to a file.
 
 ### Software Installation on the I75W Board
- * Run the script in install signalk plugin.txt on your Raspberry Pi to create a heartbeat plugin, which is used to detect that the server connection is alive. The plugin must be enabled.
+ * On you Raspberry Pi Signal K server, run the script signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive. The plugin must be enabled.
 
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
 2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. It's not possible to just drop the files onto the device mounted as a USB drive.
