@@ -44,7 +44,8 @@ Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc
 The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical size. I also have some 128x64 2mm pitch panels but they are large for my boat. Panels can be chained to create a larger display, with the upper limit depending on the controller board.
 
 ### Microcontroller Board
-* The LED matrix display panel need a separate controller. This project uses a [Pimoroni board] (https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339). It's reliable and fast, and Pimoroni's custom micropython build includes the matrix drivers. The board has wifi and Bluetooth connectivity. 
+* The LED matrix display panel need a separate controller. This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339). It's reliable and fast, and Pimoroni's custom micropython build includes the matrix drivers. The board has wifi and Bluetooth connectivity.
+* 
 * There are other boards available that include the Hub 75 interface from Adafruit and other vendors, for the Raspberry Pi and ESP-32. 
 
 ### Power Requirement
