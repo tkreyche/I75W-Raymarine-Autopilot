@@ -15,7 +15,7 @@ I'm not selling anything: the hardware is readily available from 3rd parties and
 This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
 
 ### General Description
-This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots, such as the ST1000+. A Tillerpilot is typically mounted near the stern of a boat, and it's incovenient to view the display. This display can be mounted in an better location. 
+This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots. A Tillerpilot is typically mounted near the stern of a boat, and it's incovenient to view the display. This display can be mounted in an better location. 
 
 You can use the I75W display by itself, but it only solves half the problem. It's also inconvenient to operate the Tillerpilot from the stern. The key component for a complete solution is a Nauti-Control ST control module, with a handheld wireless keypad. 
 
