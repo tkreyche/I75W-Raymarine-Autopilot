@@ -43,8 +43,7 @@ __Status Indicator:__
 There is a blinking status indicator in the lower right corner. It's green if receiving fresh data from the Signal K server and red if it is not.
 
 ### Hardware
-The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes. Pimoroni has a lot of info on their web site, as does Adafruit (who sells a different type of matrix driver).
-
+The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a separate LED Matrix Display. The I75 board connects to The display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only designed for a 64x64 display.
 
 
 ### LED Matrix Display
@@ -54,10 +53,9 @@ Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc
 
 The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical size. I also have some 128x64 2mm pitch panels but they are a little big for my boat. My plan for the time being is to just emulate the Tillerpilot display with text. Panels can be chained to create a larger display. Controller boards have limits to the total size of the displays they can handle.
 
-### Microcontroller
-The display panels need a controller. There are various boards available that include the Hub 75 interface. Adafruit makes a HAT for a Pi also there are ESP-32 versions.
-I'm using the Pimoroni board https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339
-It's reliable and fast and they have their own custom micropython build that includes the matrix drivers. It has wifi and Bluetooth. It's based on a RP2350, which has plenty of memory and one core easily handles everything. 
+### Microcontroller Board
+The LED matrix display panel need a separate controller. This project uses a Pimoroni board https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339. It's reliable and fast, and Pimoroni's custom micropython build includes the matrix drivers. The board has wifi and Bluetooth connectivity.
+There are other boards available that include the Hub 75 interface from Adafruit and other vendors, for the Raspberry Pi and ESP-32. 
 
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system. It can be powered from a USB-C cable or a simple 5v power cable.
