@@ -40,9 +40,9 @@ The bottom line shows the difference between the two...this is a little redundan
 
 __Status Indicators:__
 
-*There is a blinking white status indicator in the center, that just indicates that the I75 firmware is running.
-*The lower right corner status light is steady green if it's receiving data from the Signal K server, and flashes oragnge if it is not.
-*The lower left corner status light is steady green if it the magentic heading is updating, and flashes oragnge if it is not.
+* There is a blinking white status indicator in the center, that just indicates that the I75 firmware is running.
+* The lower right corner status light is steady green if it's receiving data from the Signal K server, and flashes oragnge if it is not.
+* The lower left corner status light is steady green if it the magentic heading is updating, and flashes oragnge if it is not.
 
 ### Hardware
 The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a separate LED Matrix Display. The I75 board connects to The display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only designed for a 64x64 display.
