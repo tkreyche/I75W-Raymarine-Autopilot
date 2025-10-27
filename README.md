@@ -61,7 +61,7 @@ There are a couple options for sending data from the Tillerpilot to the Signal K
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
 ### Signal K Software Installation
-This installation assumes you already have Signal K running on a Raspberry Pi. If not, the Signal K website has good instructions.
+This installation assumes you already have Signal K running on a Raspberry Pi. If not, the [Signal K website has good instructions](https://demo.signalk.org/documentation/Installation/Raspberry_Pi.html).
  * On you Raspberry Pi Signal K server, run the script that in signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive.
  *  The plugin must be enabled.
 You should see the following paths in the Signal K Data Browser. If you don't see them, your Tillerpilot is not hooked up correctly to the Signal K server.
