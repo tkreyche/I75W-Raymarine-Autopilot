@@ -17,9 +17,9 @@ This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or
 ### General Description
 This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots. A Tillerpilot is typically mounted near the stern of a boat, and it's incovenient to view the display. This display can be mounted in an better location. 
 
-You can use the I75W display by itself, but it only solves half the problem. It's also inconvenient to operate the Tillerpilot from the stern. The key component for a complete solution is a Nauti-Control ST control module, with a handheld wireless keypad. 
+You can use the I75W display by itself, but it only solves half the problem. It's also inconvenient to operate the Tillerpilot from the stern. A Nauti-Control ST control module, with a handheld wireless keypad, si the essential component for a complete solution.
 
-The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl can run a web UI on a mobile phone, but I can't manage one in typical sailing conditions.
+The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl can run a web UI on a mobile phone, but I can't manage one singlehanded in typical sailing conditions.
 
 ### What the Display Shows
 The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. 
