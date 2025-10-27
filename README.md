@@ -55,7 +55,7 @@ LED matrix displays can use a lot of power, dependent on the display size and ho
 This project requires a Signal K server, typically running on a Raspbery Pi 4B or 5, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server. If you want remote controler. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
 
 There are a couple options for sending data from the Tillerpilot to the Signal K server
-* Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
+* Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the [Signal K documentation for Seatalk](https://demo.signalk.org/documentation/Configuration/Seatalk_Connections.html).
 * Use a [MacArthur Hat](https://openmarine.net/macarthur-hat), which has a Seatalk1 port, also hard-wired to the Tillpilot. This Hat is widely used by DIY sailors and also handles NMEA2000 connections.
 
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
