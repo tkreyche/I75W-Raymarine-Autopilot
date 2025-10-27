@@ -65,11 +65,11 @@ This installation assumes you already have Signal K running on a Raspberry Pi. I
  * On you Raspberry Pi Signal K server, run the script that in signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive.
  *  The plugin must be enabled.
 You should see the following paths in the Signal K Data Browser. If you don't see them, your Tillerpilot is not hooked up correctly to the Signal K server.
-* environment.heartbeat (this is from the heatbeat script)
-* navigation.headingMagnetic (from ST1000+)
-* navigation.magneticVariation (from ST1000+)
-* steering.autopilot.state (from ST1000+)
-* steering.autopilot.target.headingMagnetic (from ST1000+)
+** environment.heartbeat (this is from the heatbeat script)
+** navigation.headingMagnetic (from ST1000+)
+** navigation.magneticVariation (from ST1000+)
+** steering.autopilot.state (from ST1000+)
+** steering.autopilot.target.headingMagnetic (from ST1000+)
 
 ### Troubleshooting Signal K Connections
 If you having seeing any unexpected results, you can run the debug python script "debug_signalk.py" and it will report on the Signalk K responses. This script outputs to the console of a Python IDE such as Thonny. There is no output to the LED matrix. Sample results are included in the program comments.
