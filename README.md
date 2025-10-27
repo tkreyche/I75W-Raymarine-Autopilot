@@ -73,9 +73,18 @@ There are optional flags available to print performance data to a console.
 There is a splash screen to demo the graphics capabilities of the board, but the working display is simple text that emulates the Tillerpilot display.
 Enabling debugging will write error messages to a file.
 
-### Software Installation on the I75W Board
- * On you Raspberry Pi Signal K server, run the script signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive. The plugin must be enabled.
+### Signal K Software Installation
+This installation assumes you already have Signal K running on a Raspberry Pi. If not, the Signal K website has good instructions.
+ * On you Raspberry Pi Signal K server, run the script that in signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive.
+ *  The plugin must be enabled.
+You should see the following paths in the Signal K Data Browser. If you don't see them, your Tillerpilot is not hooked up correctly to the Signal K server.
+* environment.heartbeat (this is from the heatbeat script)
+* navigation.headingMagnetic (from ST1000+)
+* navigation.magneticVariation (from ST1000+)
+* steering.autopilot.state (from ST1000+)
+* steering.autopilot.target.headingMagnetic (from ST1000+)
 
+### Software Installation on the I75W Board
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
 2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. It's not possible to just drop the files onto the device mounted as a USB drive.
 3) Run Thonny, connect the I75W board with a USB cable. Under options, set the Interpreter to MicroPython (Raspberry Pi Pico) and set the Port to the USB serial port the board is using.
