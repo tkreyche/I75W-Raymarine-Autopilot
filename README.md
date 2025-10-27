@@ -45,10 +45,16 @@ The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a LED Matr
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
 
-### LED Matrix and Power 
-The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable. The system is capable of fancy graphics, see the splash screen or Pimoroni for examples. 
+### LED Matrix Display
+The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). The system is capable of fancy graphics, see the splash screen or Pimoroni for examples. 
+These displays have a Hub 75 interface for connection to a microcontroller or small computer like a Raspberry Pi.
+Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. Finer pitch gives better light density and smaller display size.
 
+The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical size. I also have some 128x64 2mm pitch panels but they are a little big for my boat. My plan for the time being is to just emulate the Tillerpilot display with text. Panels can be chained to create a larger display. Controller boards have limits to the total size of the displays they can handle.
+
+### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system. It can be powered from a USB-C cable or a simple 5v power cable.
+LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable.
 
 ### Tillerpilot
 This project assumes you are using a Raymarine Tillerpilot, such as a ST1000+ or ST2000+. These devices are somewhat antiquated, but are widely used and relatively low-cost solution for automated steering. They have well-known flaws, such as lack of waterproofing, hard end stops and the use of an outdated communications protocol. Other DIY options are available, such as pyPilot or mechanical windvanes which are not covered here.
