@@ -45,8 +45,7 @@ There is a blinking status indicator in the lower right corner. It's green if re
 ### Hardware
 The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a LED Matrix Display. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. These displays are widely available in different sizes. Pimoroni has a lot of info on their web site, as does Adafruit (who sells a different type of matrix driver).
 
-### Waterproofing
-The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
+
 
 ### LED Matrix Display
 The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). The system is capable of fancy graphics, see the splash screen or Pimoroni for examples. 
@@ -55,13 +54,16 @@ Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc
 
 The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical size. I also have some 128x64 2mm pitch panels but they are a little big for my boat. My plan for the time being is to just emulate the Tillerpilot display with text. Panels can be chained to create a larger display. Controller boards have limits to the total size of the displays they can handle.
 
+### Microcontroller
+The display panels need a controller. There are various boards available that include the Hub 75 interface. Adafruit makes a HAT for a Pi also there are ESP-32 versions.
+I'm using the Pimoroni board https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339
+It's reliable and fast and they have their own custom micropython build that includes the matrix drivers. It has wifi and Bluetooth. It's based on a RP2350, which has plenty of memory and one core easily handles everything. 
+
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12 or 24v system. It can be powered from a USB-C cable or a simple 5v power cable.
 LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable.
 
-
-
-### Signal K Server
+### Signal K Server Requirement
 This project requires a Signal K server, typically running on a Raspbery Pi 4B or 5, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server. If you want remote controler. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
 
 There are several options for sending data from the Tillerpilot to the Signal K server:
@@ -89,6 +91,9 @@ Enabling debugging will write error messages to a file.
 4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there tutorials for using Thonny with these boards.
 3) Follow these instructions to add a websocket library: https://pypi.org/project/micropython-async-websocket-client/
 5) Drop in the secrets file, modified for the wireless network, and the program file into the root.
+
+### Waterproofing
+The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
 
 ### Links:
 
