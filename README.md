@@ -60,19 +60,6 @@ There are several options for sending data from the Tillerpilot to the Signal K 
 
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
-### Troubleshooting Signal K Connections
-If you having seeing any unexpected results, you can run the debug python script "debug_signalk.py" and it will report on the Signalk K responses. This script outputs to the console of a Python IDE such as Thonny. There is no output to the LED matrix. Sample results are included in the program comments. 
-
-### Software Description (optional read)
-The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
-The connection uses the Signal K websockets interface for lowest latency communications.
-Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
-The wireless configuration supports both DHCP and a static IP address.
-Common configuration items are stored in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
-There are optional flags available to print performance data to a console.
-There is a splash screen to demo the graphics capabilities of the board, but the working display is simple text that emulates the Tillerpilot display.
-Enabling debugging will write error messages to a file.
-
 ### Signal K Software Installation
 This installation assumes you already have Signal K running on a Raspberry Pi. If not, the Signal K website has good instructions.
  * On you Raspberry Pi Signal K server, run the script that in signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive.
@@ -84,6 +71,9 @@ You should see the following paths in the Signal K Data Browser. If you don't se
 * steering.autopilot.state (from ST1000+)
 * steering.autopilot.target.headingMagnetic (from ST1000+)
 
+### Troubleshooting Signal K Connections
+If you having seeing any unexpected results, you can run the debug python script "debug_signalk.py" and it will report on the Signalk K responses. This script outputs to the console of a Python IDE such as Thonny. There is no output to the LED matrix. Sample results are included in the program comments.
+
 ### Software Installation on the I75W Board
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
 2) There are a few options for loading Micropython code files onto the board, the simplest to use the Thonny programming tool - it's a free download. VS Code can be used but it's more complicated to set up. It's not possible to just drop the files onto the device mounted as a USB drive.
@@ -91,6 +81,16 @@ You should see the following paths in the Signal K Data Browser. If you don't se
 4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there tutorials for using Thonny with these boards.
 3) Follow these instructions to add a websocket library: https://pypi.org/project/micropython-async-websocket-client/
 5) Drop in the secrets file, modified for the wireless network, and the program file into the root.
+
+### Software Description (optional read)
+The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
+The connection uses the Signal K websockets interface for lowest latency communications.
+Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
+The wireless configuration supports both DHCP and a static IP address.
+Common configuration items are stored in a secrets.py file, so the main code file doesn't need to be edited, unless the display size or other significant changes are made.
+There are optional flags available to print performance data to a console.
+There is a splash screen to demo the graphics capabilities of the board, but the working display is simple text that emulates the Tillerpilot display.
+Enabling debugging will write error messages to a file.
 
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
