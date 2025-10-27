@@ -96,12 +96,6 @@ Enabling debugging will write error messages to a file.
 ### Waterproofing
 The display is not waterproof and requires a case. Later, I'll add documentation for a case build using a low-reflective acrylic front panel. It's possible to buy waterproof matrix displays, but they are expensive - intended for use in outdoor venues such as sports stadiums.
 
-### Links:
-
-https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339
-
-https://nauti-control.com/
-
 
 
 
