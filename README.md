@@ -45,7 +45,7 @@ __Status Indicators:__
 The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a separate LED Matrix Display. The I75 board connects to The display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only designed for a 64x64 display.
 
 
-### LED Matrix Display
+### LED Matrix Display Info
 The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). The system is capable of fancy graphics, see the splash screen or Pimoroni for examples. 
 These displays have a Hub 75 interface for connection to a microcontroller or small computer like a Raspberry Pi.
 Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. Finer pitch gives better light density and smaller display size.
