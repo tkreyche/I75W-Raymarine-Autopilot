@@ -34,8 +34,7 @@ __Status Indicators:__
 * The lower left corner status light is steady green if it the magentic heading is updating, and flashes oragnge if it is not.
 
 ### Hardware
-The hardware is an off-the-shelf Pimoroni I75W board (RP2350) driving a separate LED Matrix Display. The I75 board connects to The display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only designed for a 64x64 display.
-
+The hardware is off-the-shelf: a Pimoroni I75W board driving a separate LED Matrix Display. The I75 board connects to The display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64.
 
 ### LED Matrix Display Info
 The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). The system is capable of fancy graphics, see the splash screen or Pimoroni for examples. 
