@@ -25,18 +25,15 @@ The I75W Display allows sailors to get immediate visual feedback from their Till
 The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. 
 
 __Standby Mode:__
-
 * The top line show "C" (for compass) and the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this navigation.headingMagnetic. The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
 * No other lines are shown.
 
 __Auto Mode:__
-
 * The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
 * The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic.
 * The bottom line shows the difference between the two...this is a little redundant.
 
 __Status Indicators:__
-
 * There is a blinking white status indicator in the center, that just indicates that the I75 firmware is running.
 * The lower right corner status light is steady green if it's receiving data from the Signal K server, and flashes oragnge if it is not.
 * The lower left corner status light is steady green if it the magentic heading is updating, and flashes oragnge if it is not.
