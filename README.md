@@ -72,7 +72,7 @@ There may be future options to send Tillerpilot data from a NautiControl ST Wire
 Run the script in install signalk plugin.txt on your Raspberry Pi to create a heartbeat plugin, which is used to detect that the server connection is alive. The plugin must be enabled.
 
 ### Troubleshooting Signal K Connections
-If you having seeing any unexpected results, you can run the debug python script "debug_signalk.py" and it will report on the Signalk K responses. This script outputs to the console of a Python IDE such as Thonny. There is no output to the LED matrix. Sample results are included in the program contents. 
+If you having seeing any unexpected results, you can run the debug python script "debug_signalk.py" and it will report on the Signalk K responses. This script outputs to the console of a Python IDE such as Thonny. There is no output to the LED matrix. Sample results are included in the program comments. 
 
 ### Software Description (optional read)
 The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
