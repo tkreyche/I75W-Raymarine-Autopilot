@@ -45,7 +45,6 @@ The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical siz
 
 ### Microcontroller Board
 * The LED matrix display panel need a separate controller. This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339). It's reliable and fast, and Pimoroni's custom micropython build includes the matrix drivers. The board has wifi and Bluetooth connectivity.
-* 
 * There are other boards available that include the Hub 75 interface from Adafruit and other vendors, for the Raspberry Pi and ESP-32. 
 
 ### Power Requirement
@@ -55,9 +54,9 @@ LED matrix displays can use a lot of power, dependent on the display size and ho
 ### Signal K Server Requirement
 This project requires a Signal K server, typically running on a Raspbery Pi 4B or 5, and used by many DIY sailors. The Tillerpilot sends data using the Seatalk1 protocol to the Signal K server. If you want remote controler. The I75W board and display connects wirelessly to the Signal K server to retrieve the Tillerpilot data.
 
-There are several options for sending data from the Tillerpilot to the Signal K server:
-1) Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
-2) Use a MacArthur Hat, which has a Seatalk1 port, also hard-wired to the Tillpilot. This Hat is widely used by DIY sailors and also handles NMEA2000 connections.
+There are a couple options for sending data from the Tillerpilot to the Signal K server
+* Use an optoisolater to hard-wire the Tillerpilot to a Raspbery Pi port - this is simple and is described in the Signal K documentation for Seatalk.
+* Use a [MacArthur Hat](https://openmarine.net/macarthur-hat), which has a Seatalk1 port, also hard-wired to the Tillpilot. This Hat is widely used by DIY sailors and also handles NMEA2000 connections.
 
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
