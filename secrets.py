@@ -1,70 +1,81 @@
-# secrets.py - Configuration file for Signal K WebSocket client
-# =============================================================
+# secrets.py - Configuration file for Signal K WebSocket Monitor
+# This file contains credentials and configuration for the MicroPython program
+
+# ============================================================================
+# REQUIRED SETTINGS
+# ============================================================================
 
 # WiFi Credentials
-SSID = "Bluehouse"
-PASSWORD = "1010a1010b1010cat"
-
-# Static IP Configuration (Optional)
-# -----------------------------------
-# Set USE_STATIC_IP to True to use static IP instead of DHCP
-# If USE_STATIC_IP is False or not defined, DHCP will be used
-
-USE_STATIC_IP = False  # Set to True to enable static IP
-
-# Static IP Settings (only used if USE_STATIC_IP = True)
-STATIC_IP = "192.168.1.100"       # Your desired static IP address
-STATIC_SUBNET = "255.255.255.0"   # Subnet mask (usually 255.255.255.0)
-STATIC_GATEWAY = "192.168.1.1"    # Your router's IP address
-STATIC_DNS = "8.8.8.8"            # DNS server (8.8.8.8 is Google DNS)
+SSID = "YourWiFiNetworkName"        # Your WiFi network name (SSID)
+PASSWORD = "YourWiFiPassword"        # Your WiFi password
 
 # Signal K Server Configuration
-HOST = "192.168.0.99"
-PORT = 3000
-VERSION = "v1"
+HOST = "192.168.1.10"                # Signal K server IP address or hostname
+PORT = 3000                          # Signal K server port (default: 3000)
+VERSION = "v1"                       # Signal K API version (usually "v1")
 
-# Display Colors (RGB tuples)
-# Matrix Display colors
-# All white for better visibility, change as you like
-COLOR_AUTO = (255,255,255)      
-COLOR_COMPASS = (255,255,255)
-COLOR_TARGET = (255,255,255)
-COLOR_ERROR = (255,0,0)
-COLOR_DIFF = (0,0,255)
-# Performance Tuning
-HEADING_SMOOTHING = 0.9  # EMA smoothing factor (0.0-1.0)
-                         # Lower = smoother but slower response
-                         # Higher = faster but more jitter
+# ============================================================================
+# OPTIONAL SETTINGS (uncomment and modify as needed)
+# ============================================================================
 
-# Debug Options
-# Performance tuning
-DEBUG_TIMING = True # Set to True to print timing diagnostics for display updates
-DEBUG_WS = True     # Set to True to track and print WebSocket response time statistics
+# Static IP Configuration (optional - uses DHCP if not set)
+# USE_STATIC_IP = True
+# STATIC_IP = "192.168.1.100"
+# STATIC_SUBNET = "255.255.255.0"
+# STATIC_GATEWAY = "192.168.1.1"
+# STATIC_DNS = "8.8.8.8"
 
-LOG_ERRORS_TO_FILE = True  # Enable error logging
-LOG_FILE_PATH = '/error_log.txt'  # Where to save logs
-LOG_FILE_MAX_SIZE = 50000  # Max size before rotation (bytes)
+# Signal K Subscription Paths
+# Comma-separated list of Signal K paths to subscribe to
+# SUBSCRIBE = (
+#     "navigation.headingMagnetic,"
+#     "steering.autopilot.state,"
+#     "steering.autopilot.target.headingMagnetic,"
+#     "environment.heartbeat"
+# )
 
+# Connection Timing Settings
+# RECONNECT_WAIT = 5                 # Seconds to wait before reconnecting
+# CONNECTION_TIMEOUT = 30            # Connection timeout in seconds
+# SUBSCRIPTION_CHECK_INTERVAL = 15   # Seconds between subscription checks
+# SUBSCRIPTION_INITIAL_WAIT = 5      # Seconds to wait before first subscription check
 
-# Splash Screen
-RUN_SPLASH = False
+# Exponential Backoff Settings - Signal K
+# SIGNALK_BACKOFF_INITIAL = 5        # Initial backoff delay in seconds
+# SIGNALK_BACKOFF_MAX = 30           # Maximum backoff delay in seconds
+# SIGNALK_BACKOFF_MULTIPLIER = 2     # Multiplier for exponential backoff
 
-# EXAMPLE: Static IP Configuration
-# ---------------------------------
-# If you want to use a static IP address instead of DHCP:
-#
-# 1. Set USE_STATIC_IP = True
-# 2. Configure your network settings:
-#    STATIC_IP = "192.168.1.100"       # Choose an unused IP on your network
-#    STATIC_SUBNET = "255.255.255.0"   # Typically this for home networks
-#    STATIC_GATEWAY = "192.168.1.1"    # Your router's IP (usually .1 or .254)
-#    STATIC_DNS = "8.8.8.8"            # DNS server address
-#
-# 3. Make sure the IP address you choose:
-#    - Is in the same subnet as your router
-#    - Is NOT in your router's DHCP range
-#    - Is not already used by another device
-#
-# To find your current network settings (when using DHCP):
-# - Check your router's admin page
-# - Or use a device already connected to see its IP/Gateway/Subnet
+# Exponential Backoff Settings - WiFi
+# WIFI_BACKOFF_INITIAL = 5           # Initial backoff delay in seconds
+# WIFI_BACKOFF_MAX = 30              # Maximum backoff delay in seconds
+# WIFI_BACKOFF_MULTIPLIER = 2        # Multiplier for exponential backoff
+
+# Deduplication Settings
+# ENABLE_DEDUPLICATION = True        # Enable message deduplication
+# DEDUP_WINDOW_MS = 150              # Deduplication time window in milliseconds
+# DEDUP_CACHE_SIZE = 50              # Number of messages to cache for deduplication
+
+# Output Settings
+# PRINT_FULL_JSON = False            # Print full JSON messages
+# PRINT_PATH_VALUE = True            # Print path/value pairs in simplified format
+
+# Heartbeat Monitoring Settings
+# HEARTBEAT_TIMEOUT = 30             # Seconds before heartbeat is considered stale
+# HEARTBEAT_PATH = "environment.heartbeat"  # Signal K path for heartbeat data
+# HEARTBEAT_DEBUG = True             # Enable heartbeat debug messages
+
+# Magnetic Heading Change Monitoring Settings
+# MAG_HEADING_TIMEOUT = 30           # Seconds before heading is considered stale
+# MAG_HEADING_PATH = "navigation.headingMagnetic"  # Signal K path for magnetic heading
+# MAG_HEADING_TOLERANCE = 0.01       # Minimum heading change to consider as "changed" (radians)
+# MAG_HEADING_DEBUG = True           # Enable heading debug messages
+
+# EWMA Filter Settings for Heading
+# ENABLE_HEADING_EWMA = True         # Enable exponential weighted moving average filter
+# HEADING_EWMA_ALPHA = 0.2           # Smoothing factor (0.0-1.0, lower = more smoothing)
+
+# Display Settings
+# ENABLE_DISPLAY = True              # Enable the Interstate 75 W LED display
+
+# Status Indicator Settings
+# INDICATOR_BLINK_INTERVAL = 500     # Milliseconds between indicator blinks

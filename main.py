@@ -1,82 +1,35 @@
-# signalk_ws_i75w.py - Optimized for Pimoroni Interstate 75 W (RP2350)
-# ========================================================================
-# Signal K WebSocket client with HUB75 LED matrix display
-#
-# BOARD: Pimoroni Interstate 75 W
-# --------------------------------
-# - RP2350 dual-core Cortex-M33 @ 150MHz
-# - 520KB SRAM (shared between cores)
-# - Pico W wireless module (CYW43439)
-# - HUB75 interface for LED matrices
-#
-# DISPLAY: 64x64 RGB LED Matrix
-# ------------------------------
-# Layout (three horizontal sections):
-# • Top Section (0-21): Always visible
-#   - "C" indicates Compass Heading, Signal K calls it navigation.headingMagnetic
-#   - Three-digit heading: "045"
-# • Middle Section (22-42): Target heading (auto mode only)
-#   - "A" for Auto Mode + Three-digit target heading: "270", Signal K call it steering.autopilot.target.headingMagnetic
-#   - Only displayed when autopilot is in auto mode 
-# • Bottom Section (43-63): Heading difference (auto mode only)
-#   - Sign and three-digit value: "+015" or "-020"
-#   - Positive = turn right to reach target, Negative = turn left
-#   - Only displayed when autopilot is in auto mode
-# • Center Keep-Alive (1x3 pixels at x=32, rows 61-63): Blinks bright white every second to show program is running
-# • Status Bar (rows 61-63): Two independent indicators
-#   - Lower RIGHT (10x3, cols 54-63): Connection health indicator
-#     * Green (solid): Heartbeat data flowing normally (environment.heartbeat updating)
-#     * Red (blinking): No heartbeat data for 60+ seconds
-#   - Lower LEFT (10x3, cols 0-9): Heading stale indicator
-#     * Green (solid): Compass heading updating normally (navigation.headingMagnetic changing)
-#     * Yellow/Orange (blinking): Compass heading unchanged for 60+ seconds
-#     * Shows independently of connection status (can be orange while right is red)
-
-#Websockets
-#--------------------------------
-# uses library from:
-# https://pypi.org/project/micropython-async-websocket-client/
-# A client-specific library designed to maintain a persistent WebSocket connection in the background using asyncio. 
-# Best for: Client-only projects, such as an IoT sensor sending data to a remote server
-# Usage:
-#>>> import mip
-#>>> mip.install("github:Vovaman/micropython_async_websocket_client/async_websocket_client/ws.py")
-# this will put the code in the lib folder
-
-import math
-import micropython
-
+# Simple WebSocket Frame Monitor - Raw frames with timestamps
 import secrets
 import time
-import gc
 import network
 import uasyncio as asyncio
+import socket
+import ubinascii
+import gc
 
-# Interstate 75 W display drivers
-from interstate75 import Interstate75, DISPLAY_INTERSTATE75_64X64
-from picographics import PicoGraphics, DISPLAY_INTERSTATE75_64X64
-
-# Import external WebSocket library (from lib/ws.py)
-from ws import AsyncWebsocketClient
-
-# Import compatibility layer for different MicroPython builds
 try:
     import json
 except ImportError:
     import ujson as json
 
+# Pimoroni Interstate 75 W display imports
+try:
+    from interstate75 import Interstate75, DISPLAY_INTERSTATE75_64X64
+    from picographics import PicoGraphics, DISPLAY_INTERSTATE75_64X64
+    DISPLAY_AVAILABLE = True
+except ImportError:
+    DISPLAY_AVAILABLE = False
+    print("Warning: Interstate75 display library not available")
+
 # ============================================================================
-# USER CONFIGURATION
+# CONFIGURATION
 # ============================================================================
 
 # WiFi Credentials
 SSID = secrets.SSID
 PASSWORD = secrets.PASSWORD
 
-RUN_SPLASH = secrets.RUN_SPLASH
-
 # Static IP Configuration (optional)
-# If USE_STATIC_IP is False or not defined, DHCP will be used
 USE_STATIC_IP = getattr(secrets, 'USE_STATIC_IP', False)
 STATIC_IP = getattr(secrets, 'STATIC_IP', '192.168.1.100')
 STATIC_SUBNET = getattr(secrets, 'STATIC_SUBNET', '255.255.255.0')
@@ -88,1722 +41,1211 @@ HOST = secrets.HOST
 PORT = secrets.PORT
 VERSION = secrets.VERSION
 
-# SignalK Subscription Paths
-# Not in secrets file because changing them would require code changes to handle display and printing
-# Subscription Paths
-SUBSCRIBE = (
+# Signal K Subscription paths
+SUBSCRIBE = getattr(secrets, 'SUBSCRIBE', 
     "navigation.headingMagnetic,"
     "steering.autopilot.state,"
     "steering.autopilot.target.headingMagnetic,"
     "environment.heartbeat"
 )
 
-TOKEN = ""
+# Connection timing
+RECONNECT_WAIT = getattr(secrets, 'RECONNECT_WAIT', 5)
+CONNECTION_TIMEOUT = getattr(secrets, 'CONNECTION_TIMEOUT', 30)
+SUBSCRIPTION_CHECK_INTERVAL = getattr(secrets, 'SUBSCRIPTION_CHECK_INTERVAL', 15)
+SUBSCRIPTION_INITIAL_WAIT = getattr(secrets, 'SUBSCRIPTION_INITIAL_WAIT', 5)
 
-# ============================================================================
-# TIMING PARAMETERS
-# ============================================================================
+# Exponential backoff settings
+SIGNALK_BACKOFF_INITIAL = getattr(secrets, 'SIGNALK_BACKOFF_INITIAL', 5)
+SIGNALK_BACKOFF_MAX = getattr(secrets, 'SIGNALK_BACKOFF_MAX', 30)
+SIGNALK_BACKOFF_MULTIPLIER = getattr(secrets, 'SIGNALK_BACKOFF_MULTIPLIER', 2)
 
-RECONNECT_WAIT = 3
-PRINT_INTERVAL = 1  # Increase to 10+ to reduce console output for better performance
-WIFI_CHECK_INTERVAL = 10
-GC_INTERVAL = 30
-# NEW: Separate timeouts for the two independent indicators
-HEARTBEAT_TIMEOUT = 30   # Seconds without heartbeat before connection health indicator goes red
-HEADING_STALE_TIMEOUT = 30  # Seconds without heading change before heading indicator goes orange
-INDICATOR_BLINK_INTERVAL = 1.0  # Seconds between indicator blinks (configurable)
+WIFI_BACKOFF_INITIAL = getattr(secrets, 'WIFI_BACKOFF_INITIAL', 5)
+WIFI_BACKOFF_MAX = getattr(secrets, 'WIFI_BACKOFF_MAX', 30)
+WIFI_BACKOFF_MULTIPLIER = getattr(secrets, 'WIFI_BACKOFF_MULTIPLIER', 2)
 
-# Performance tuning
-DEBUG_TIMING = secrets.DEBUG_TIMING # Set to True to print timing diagnostics for display updates
-DEBUG_WS = secrets.DEBUG_WS     # Set to True to track and print WebSocket response time statistics
+# Deduplication settings
+ENABLE_DEDUPLICATION = getattr(secrets, 'ENABLE_DEDUPLICATION', True)
+DEDUP_WINDOW_MS = getattr(secrets, 'DEDUP_WINDOW_MS', 150)
+DEDUP_CACHE_SIZE = getattr(secrets, 'DEDUP_CACHE_SIZE', 50)
 
-# Error logging to file
-LOG_ERRORS_TO_FILE = getattr(secrets, 'LOG_ERRORS_TO_FILE', False)  # Set to True to log errors to file
-LOG_FILE_PATH = getattr(secrets, 'LOG_FILE_PATH', '/error_log.txt')  # Path to error log file
-LOG_FILE_MAX_SIZE = getattr(secrets, 'LOG_FILE_MAX_SIZE', 50000)  # Max log file size in bytes before rotation
-# NOTE: When LOG_ERRORS_TO_FILE is enabled, all errors will be logged to LOG_FILE_PATH with:
-#   - Timestamp
-#   - Error type and message
-#   - Current state (mode, heading, target, connection status)
-#   - Memory usage
-# Log rotation: When file exceeds LOG_FILE_MAX_SIZE, keeps most recent 20% of entries
+# Output settings
+PRINT_FULL_JSON = getattr(secrets, 'PRINT_FULL_JSON', False)
+PRINT_PATH_VALUE = getattr(secrets, 'PRINT_PATH_VALUE', True)
 
-# Constants
-RAD_TO_DEG = 57.2957795
-HEADING_SMOOTHING = secrets.HEADING_SMOOTHING
-                         # EMA smoothing factor for navigation heading
-                         # Range: 0.0 (max smoothing) to 1.0 (no smoothing)
-                         # Typical values: 0.1-0.3 for smooth display
-                         #                 0.5-0.8 for responsive display
-                         # Lower = smoother but SLOWER response (more lag)
-                         # Higher = faster response but more jitter
-                         # If display feels laggy, try increasing this value
+# Heartbeat monitoring settings
+HEARTBEAT_TIMEOUT = getattr(secrets, 'HEARTBEAT_TIMEOUT', 30)
+HEARTBEAT_PATH = getattr(secrets, 'HEARTBEAT_PATH', "environment.heartbeat")
+HEARTBEAT_DEBUG = getattr(secrets, 'HEARTBEAT_DEBUG', True)
 
-# ============================================================================
-# DISPLAY CONFIGURATION
-# ============================================================================
+# Magnetic heading change monitoring settings
+MAG_HEADING_TIMEOUT = getattr(secrets, 'MAG_HEADING_TIMEOUT', 30)
+MAG_HEADING_PATH = getattr(secrets, 'MAG_HEADING_PATH', "navigation.headingMagnetic")
+MAG_HEADING_TOLERANCE = getattr(secrets, 'MAG_HEADING_TOLERANCE', 0.01)
+MAG_HEADING_DEBUG = getattr(secrets, 'MAG_HEADING_DEBUG', True)
 
-# Display section boundaries (64 pixels tall / 3 sections)
-TOP_SECTION_Y = 0       # Top section: 0-21 (22 pixels)
-MID_SECTION_Y = 22      # Middle section: 22-42 (21 pixels)
-BOT_SECTION_Y = 43      # Bottom section: 43-63 (21 pixels)
-SECTION_HEIGHT = 21
+# EWMA filter settings for navigation.headingMagnetic
+ENABLE_HEADING_EWMA = getattr(secrets, 'ENABLE_HEADING_EWMA', True)
+HEADING_EWMA_ALPHA = getattr(secrets, 'HEADING_EWMA_ALPHA', 0.2)  # 0.0-1.0, lower = more smoothing
 
-# Display colors 
-COLOR_BLACK = (0, 0, 0)
-COLOR_AUTO = secrets.COLOR_AUTO    
-COLOR_COMPASS = secrets.COLOR_COMPASS
-COLOR_TARGET = secrets.COLOR_TARGET
-COLOR_DIFF = secrets.COLOR_DIFF
-COLOR_ERROR = secrets.COLOR_ERROR
+# Radian to degree conversion constant (more efficient than math.degrees)
+RAD_TO_DEG = 57.29577951308232  # 180 / π
 
-# Pre-defined color variations for indicators
+# Display settings
+ENABLE_DISPLAY = getattr(secrets, 'ENABLE_DISPLAY', True) and DISPLAY_AVAILABLE
+TEXT_SCALE = 0.7     # Scale for all text
+TEXT_THICKNESS = 2   # Thickness for better visibility on LED matrix
+COLOR_WHITE = (255, 255, 255)
+
+# Status indicator settings
+INDICATOR_BLINK_INTERVAL = getattr(secrets, 'INDICATOR_BLINK_INTERVAL', 500)  # ms between blinks
+INDICATOR_LEFT_X = 0
+INDICATOR_RIGHT_X = 54  # Right side (64 - 10 = 54)
+INDICATOR_Y = 61
+INDICATOR_WIDTH = 10
+INDICATOR_HEIGHT = 3
+
+# Indicator colors
 COLOR_GREEN_BRIGHT = (0, 255, 0)
 COLOR_RED_BRIGHT = (255, 0, 0)
-COLOR_RED_DIM = (0, 0, 0)
-COLOR_ORANGE_BRIGHT = (255, 100, 0)
-COLOR_ORANGE_DIM = (0, 0, 0)
-COLOR_GRAY = (100, 100, 100)
-COLOR_YELLOW = (255, 255, 0)
-COLOR_WHITE = (255, 255, 255)
-COLOR_KEEPALIVE_BRIGHT = (200, 200, 200)
-COLOR_KEEPALIVE_DIM = (0, 0, 0)
-
-# Text scaling (bitmap sans font with thickness)
-TEXT_SCALE = 0.7     # Scale for all text
-TEXT_SCALE_SMALL = 0.4     # Small scale
-TEXT_THICKNESS = 2   # Thickness for better visibility on LED matrix
-TEXT_THICKNESS_SMALL = 1 
+COLOR_RED_DIM = (0, 0, 0)  # Off when blinking
 
 # ============================================================================
-# Helper to ensure we only treat exact 'environment.heartbeat' as a heartbeat
-def _is_heartbeat_path(p):
-    return p == "environment.heartbeat"
-# ============================================================================
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-def normalize_heading_difference(target, heading):
-    """Calculate and normalize heading difference to -180 to +180 range.
-    
-    Args:
-        target: Target heading in degrees
-        heading: Current heading in degrees
-    
-    Returns:
-        int: Normalized difference (-180 to +180)
-    """
-    diff = target - heading
-    # Normalize to -180 to +180
-    if diff > 180:
-        diff -= 360
-    elif diff < -180:
-        diff += 360
-    return round(diff)
-
-
-async def wait_for_reconnect_with_indicators(display, seconds):
-    """Wait for reconnection while keeping indicators blinking.
-    
-    Args:
-        display: DisplayManager instance
-        seconds: Number of seconds to wait
-    """
-    for i in range(seconds * 10):  # Check every 100ms
-        if display.needs_refresh:
-            display.toggle_activity_indicator()
-            display.i75.update()
-            display.needs_refresh = False
-        await asyncio.sleep(0.1)
-
-
-def log_error_to_file(error_type, error_exception, details=None):
-    """Log error information to file with timestamp, stack trace, and rotation.
-    
-    Args:
-        error_type: Type of error (e.g., "GENERIC", "OSERROR", "DISPLAY")
-        error_exception: The actual exception object (not string)
-        details: Optional dictionary with additional context
-    """
-    if not LOG_ERRORS_TO_FILE:
-        return
-    
-    try:
-        import os
-        import sys
-        import io
-        
-        # Check if log file exists and its size
-        try:
-            file_size = os.stat(LOG_FILE_PATH)[6]  # [6] is file size
-            
-            # If log file is too large, rotate it
-            if file_size > LOG_FILE_MAX_SIZE:
-                # Try to keep last 20% of log (most recent entries)
-                try:
-                    with open(LOG_FILE_PATH, 'r') as f:
-                        lines = f.readlines()
-                    
-                    # Keep last 20% of lines
-                    keep_lines = int(len(lines) * 0.2)
-                    if keep_lines < 10:
-                        keep_lines = min(10, len(lines))
-                    
-                    with open(LOG_FILE_PATH, 'w') as f:
-                        f.write("=== LOG ROTATED ===\n")
-                        f.writelines(lines[-keep_lines:])
-                except Exception:
-                    # If rotation fails, just truncate
-                    with open(LOG_FILE_PATH, 'w') as f:
-                        f.write("=== LOG TRUNCATED (rotation failed) ===\n")
-        except OSError:
-            # File doesn't exist yet, that's fine
-            pass
-        
-        # Format timestamp
-        import time
-        rtc_time = time.localtime()
-        timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(
-            rtc_time[0], rtc_time[1], rtc_time[2],
-            rtc_time[3], rtc_time[4], rtc_time[5]
-        )
-        
-        # Capture exception type and message
-        exc_type = type(error_exception).__name__
-        exc_msg = str(error_exception)
-        if not exc_msg:
-            exc_msg = "(no error message)"
-        
-        # Capture stack trace to string
-        trace_buffer = io.StringIO()
-        sys.print_exception(error_exception, trace_buffer)
-        stack_trace = trace_buffer.getvalue()
-        
-        # Write error to log file
-        with open(LOG_FILE_PATH, 'a') as f:
-            f.write("\n" + "="*50 + "\n")
-            f.write("[{}] {} ERROR\n".format(timestamp, error_type))
-            f.write("="*50 + "\n")
-            f.write("Exception Type: {}\n".format(exc_type))
-            f.write("Error Message: {}\n".format(exc_msg))
-            
-            f.write("\nStack Trace:\n")
-            f.write(stack_trace)
-            
-            if details:
-                f.write("\nContext Details:\n")
-                for key, value in details.items():
-                    f.write("  {}: {}\n".format(key, value))
-            
-            f.write("\n")
-            f.flush()  # Ensure it's written immediately
-        
-    except Exception as e:
-        # Don't let logging errors crash the program
-        print("Warning: Failed to write to error log:", e)
-
-
-# ============================================================================
-# WEBSOCKET RESPONSE TIME TRACKER
-# ============================================================================
-
-class WSResponseTimeTracker:
-    """Tracks WebSocket response time statistics with minimal overhead.
-    
-    When DEBUG_WS is True:
-    - Records response time for each websocket.recv() call
-    - Calculates min, max, and average response times
-    - Prints statistics every minute
-    
-    When DEBUG_WS is False:
-    - All methods become no-ops for minimal performance impact
-    """
-    
-    def __init__(self, enabled):
-        """Initialize the tracker.
-        
-        Args:
-            enabled: True to enable tracking, False to disable
-        """
-        self.enabled = enabled
-        if self.enabled:
-            self.reset_stats()
-            self.last_report_ms = time.ticks_ms()
-            self.report_interval_ms = 60000  # 60 seconds
-            print("WS Debug: Response time tracking enabled (60s reporting interval)")
-    
-    def reset_stats(self):
-        """Reset all statistics."""
-        if self.enabled:
-            self.min_time = None
-            self.max_time = None
-            self.total_time = 0
-            self.count = 0
-    
-    def record(self, response_time_ms):
-        """Record a response time measurement.
-        
-        Args:
-            response_time_ms: Response time in milliseconds
-        """
-        if not self.enabled:
-            return
-        
-        # Update min/max
-        if self.min_time is None or response_time_ms < self.min_time:
-            self.min_time = response_time_ms
-        if self.max_time is None or response_time_ms > self.max_time:
-            self.max_time = response_time_ms
-        
-        # Update running totals
-        self.total_time += response_time_ms
-        self.count += 1
-    
-    def check_and_report(self, now_ms):
-        """Check if it's time to report statistics and print if so.
-        
-        Args:
-            now_ms: Current timestamp in milliseconds
-        """
-        if not self.enabled:
-            return
-        
-        # Check if a minute has passed
-        if time.ticks_diff(now_ms, self.last_report_ms) >= self.report_interval_ms:
-            self.print_stats()
-            self.reset_stats()
-            self.last_report_ms = now_ms
-    
-    def print_stats(self):
-        """Print current statistics."""
-        if not self.enabled or self.count == 0:
-            return
-        
-        avg_time = self.total_time / self.count
-        print("\n" + "="*50)
-        print("WS Response Time Statistics (last 60s):")
-        print("  Messages: {}".format(self.count))
-        print("  Min: {:.1f}ms".format(self.min_time))
-        print("  Max: {:.1f}ms".format(self.max_time))
-        print("  Avg: {:.1f}ms".format(avg_time))
-        print("="*50 + "\n")
-
-# ============================================================================
-# DISPLAY MANAGEMENT
+# DISPLAY MANAGER
 # ============================================================================
 
 class DisplayManager:
-    """Manages the 64x64 LED matrix display on Interstate 75 W.
-    
-    Responsibilities:
-    -----------------
-    • Initialize HUB75 display hardware
-    • Manage display buffer and updates
-    • Draw sectioned layout with autopilot status
-    • Top section: Mode indicator + current heading
-    • Middle section: Target heading (auto mode only)
-    • Bottom section: Heading difference (auto mode only)
-    • Center keep-alive (1x3, in bottom rows): Minimal bright white indicator blinking every second
-    • Status bar (rows 61-63): Two INDEPENDENT indicators
-      - Lower RIGHT (10x3): Connection health (green solid when heartbeat OK, red blinking when heartbeat stale)
-      - Lower LEFT (10x3): Heading status (green solid when heading OK, yellow/orange blinking when heading stale)
-    • Minimize display updates (only on data changes)
-    
-    Display Memory:
-    ---------------
-    • 64x64 RGB display = 12,288 bytes (64*64*3)
-    • Uses double buffering via PicoGraphics
-    • Updates triggered only when data changes
-    """
+    """Manages the Interstate 75 W LED matrix display."""
     
     def __init__(self):
-        """Initialize Interstate 75 W display hardware."""
-        print("Display: Initializing 64x64 matrix...")
-
-
+        """Initialize the display."""
+        self.i75 = None
+        self.graphics = None
+        self.last_heading = None
+        self.last_target = None
+        self.autopilot_state = None
+        
+        # Heartbeat indicator state (lower left)
+        self.heartbeat_ok = False  # Start red, turn green after first heartbeat
+        
+        # Mag heading indicator state (lower right)
+        self.mag_heading_ok = False  # Start red, turn green after first heading data
+        
+        # Shared blink state for both indicators
+        self.indicator_blink_state = False  # For blinking animation
+        self.last_blink_ms = 0
+        
+        if not ENABLE_DISPLAY:
+            return
+        
         try:
             # Create Interstate75 instance with 64x64 display
             self.i75 = Interstate75(
-                display=DISPLAY_INTERSTATE75_64X64,
+                display=DISPLAY_INTERSTATE75_64X64, 
                 color_order=Interstate75.COLOR_ORDER_BGR
             )
             
             # Get the graphics object for drawing
             self.graphics = self.i75.display
             
-            # Display dimensions
-            self.width = 64
-            self.height = 64
-            
-            # Set font to sans for cleaner look
-            try:
-                self.graphics.set_font("sans")
-                self.graphics.set_thickness(TEXT_THICKNESS_SMALL)
-                print("Display: Using 'sans' font with thickness {}".format(TEXT_THICKNESS_SMALL))
-            except Exception as e:
-                print("Display: Could not set sans font:", e)
-                print("Display: Using default font")
-            
-            print("Display: Graphics object type:", type(self.graphics))
-            print("Display: Width={}, Height={}".format(self.width, self.height))
+            # Set up the display
+            self.graphics.set_font("sans")
+            self.graphics.set_thickness(TEXT_THICKNESS)
             
             # Pre-create pen objects for commonly used colors
-            self.pen_black = self.graphics.create_pen(*COLOR_BLACK)
-            self.pen_compass = self.graphics.create_pen(*COLOR_COMPASS)
-            self.pen_auto = self.graphics.create_pen(*COLOR_AUTO)
-            self.pen_diff = self.graphics.create_pen(*COLOR_DIFF)
-            self.pen_error = self.graphics.create_pen(*COLOR_ERROR)
-            self.pen_yellow = self.graphics.create_pen(*COLOR_YELLOW)
-            self.pen_gray = self.graphics.create_pen(*COLOR_GRAY)
-            
-            # Indicator pens
+            self.pen_black = self.graphics.create_pen(0, 0, 0)
+            self.pen_white = self.graphics.create_pen(*COLOR_WHITE)
             self.pen_green_bright = self.graphics.create_pen(*COLOR_GREEN_BRIGHT)
             self.pen_red_bright = self.graphics.create_pen(*COLOR_RED_BRIGHT)
             self.pen_red_dim = self.graphics.create_pen(*COLOR_RED_DIM)
-            self.pen_orange_bright = self.graphics.create_pen(*COLOR_ORANGE_BRIGHT)
-            self.pen_orange_dim = self.graphics.create_pen(*COLOR_ORANGE_DIM)
-            self.pen_keepalive_bright = self.graphics.create_pen(*COLOR_KEEPALIVE_BRIGHT)
-            self.pen_keepalive_dim = self.graphics.create_pen(*COLOR_KEEPALIVE_DIM)
             
-            # Pre-calculate static text measurements
-            self.graphics.set_thickness(TEXT_THICKNESS_SMALL)
-            self.text_width_wait = self.graphics.measure_text("WAIT", TEXT_SCALE_SMALL)
-            self.text_width_connect = self.graphics.measure_text("CONNECT", TEXT_SCALE_SMALL)
-            
-            # Track last displayed values to minimize updates
-            self.last_mode = None
-            self.last_heading = None
-            self.last_target = None
-            self.last_diff = None
-            
-            # INDEPENDENT indicator states
-            self.activity_state = False  # For blinking animation
-            self.connection_health_ok = True  # Based ONLY on heartbeat
-            self.heading_ok = True  # Based ONLY on magnetic heading changes
-            self.keepalive_state = False  # Track keep-alive blink state
-            self.needs_refresh = False  # Flag to coordinate display updates
-            
-            # Initial clear
+            # Clear display and show initialization message
             self.graphics.set_pen(self.pen_black)
             self.graphics.clear()
+            self.graphics.set_pen(self.pen_white)
+            self.graphics.text("INIT", 4, 10, scale=TEXT_SCALE)
+            
+            # Draw initial indicators (both red until data received)
+            self._draw_heartbeat_indicator()
+            self._draw_mag_heading_indicator()
+            
             self.i75.update()
             
-            print("Display: Initialized successfully")
-        
+            print("Display initialized successfully")
+            
         except Exception as e:
-            print("Display: Initialization FAILED:", e)
-            raise
+            print("Failed to initialize display: {}".format(e))
+            self.i75 = None
+            self.graphics = None
     
-    def set_indicator_state(self, connection_ok=None, heading_ok=None):
-        """Set indicator states with change detection.
-        
-        Args:
-            connection_ok: New connection health state (None to keep current)
-            heading_ok: New heading state (None to keep current)
-        """
-        changed = False
-        
-        if connection_ok is not None and self.connection_health_ok != connection_ok:
-            self.connection_health_ok = connection_ok
-            self.activity_state = False
-            changed = True
-            if DEBUG_TIMING:
-                print("DEBUG: Connection health set to {}".format("OK (green)" if connection_ok else "ERROR (red)"))
-        
-        if heading_ok is not None and self.heading_ok != heading_ok:
-            self.heading_ok = heading_ok
-            self.activity_state = False
-            changed = True
-            if DEBUG_TIMING:
-                print("DEBUG: Heading set to {}".format("OK (green)" if heading_ok else "STALE (orange)"))
-            
-            # Force redraw when heading state changes
-            if not heading_ok:
-                self.last_mode = None
-        
-        if changed:
-            self.needs_refresh = True
-    
-    def set_connection_health_ok(self):
-        """Set connection health indicator to healthy state (green) - heartbeat is current."""
-        self.set_indicator_state(connection_ok=True)
-    
-    def set_connection_health_error(self):
-        """Set connection health indicator to error state (red) - no heartbeat."""
-        self.set_indicator_state(connection_ok=False)
-    
-    def set_heading_ok(self):
-        """Set heading indicator to healthy state (green) - heading is changing."""
-        self.set_indicator_state(heading_ok=True)
-    
-    def set_heading_stale(self):
-        """Set heading stale state (orange blinking) - heading not changing."""
-        self.set_indicator_state(heading_ok=False)
-    
-    def draw_keepalive_indicator(self):
-        """Draw the keep-alive indicator in the center of the bottom status rows.
-        
-        A minimal 1x3 pixel indicator that blinks every second to show
-        the program is running. This is separate from the health indicators.
-        
-        Position: x=32 (center), rows 61-63
-        """
-        if self.keepalive_state:
-            self.graphics.set_pen(self.pen_keepalive_bright)
-        else:
-            self.graphics.set_pen(self.pen_keepalive_dim)
-        
-        # Draw minimal 1-pixel wide indicator at center
-        self.graphics.rectangle(32, 61, 1, 3)
-    
-    def toggle_activity_indicator(self):
-        """Toggle and redraw BOTH independent activity indicators in the status bar.
-        
-        This updates both the connection health indicator (right) and the 
-        heading staleness indicator (left) based on their current states.
-        Does NOT call i75.update() - that's handled by the caller.
-        """
-        # ============================================================
-        # LOWER RIGHT: Connection health indicator (heartbeat-based)
-        # 10 columns wide (54-63), 3 rows tall (61-63)
-        # ============================================================
-        if self.connection_health_ok:
-            # Green stays solid (no blinking) - heartbeat is current
-            self.graphics.set_pen(self.pen_green_bright)
-        else:
-            # Red blinks to indicate no heartbeat
-            if self.activity_state:
-                self.graphics.set_pen(self.pen_red_bright)
-            else:
-                self.graphics.set_pen(self.pen_red_dim)
-        
-        # Draw 10x3 block in bottom-RIGHT corner
-        self.graphics.rectangle(54, 61, 10, 3)
-        
-        # ============================================================
-        # LOWER LEFT: Heading indicator (magnetic heading-based)
-        # 10 columns wide (0-9), 3 rows tall (61-63)
-        # ============================================================
-        if self.heading_ok:
-            # Green stays solid (no blinking) - heading is updating normally
-            self.graphics.set_pen(self.pen_green_bright)
-        else:
-            # Yellow/Orange blinks to indicate stale heading
-            if self.activity_state:
-                self.graphics.set_pen(self.pen_orange_bright)
-            else:
-                self.graphics.set_pen(self.pen_orange_dim)
-        
-        self.graphics.rectangle(0, 61, 10, 3)
-        
-        # Draw keep-alive indicator
-        self.draw_keepalive_indicator()
-        
-        # Note: Display update coordinated in main loop, not called here
-    
-    def show_connecting(self):
-        """Display 'CONN' message while connecting."""
-        self.graphics.set_pen(self.pen_black)
-        self.graphics.clear()
-        
-        # Show "CONNECT" in center (use pre-calculated width)
-        self.graphics.set_pen(self.pen_yellow)
-        self.graphics.set_thickness(TEXT_THICKNESS_SMALL)
-        x = (self.width - self.text_width_connect) // 2
-        y = (self.height // 2) - 4
-        self.graphics.text("CONNECT", x, y, scale=TEXT_SCALE_SMALL)
-        
-        # Redraw status indicators after clearing display
-        self.toggle_activity_indicator()
-        
-        self.i75.update()
-    
-    def show_error(self, error_msg="ERROR"):
-        """Display error message.
-        
-        Args:
-            error_msg: Error message to display (default: "ERROR")
-        """
-        self.graphics.set_pen(self.pen_black)
-        self.graphics.clear()
-        
-        # Show error in center with red color
-        self.graphics.set_pen(self.pen_error)
-        self.graphics.set_thickness(TEXT_THICKNESS_SMALL)
-        msg = error_msg[:12]
-        w = self.graphics.measure_text(msg, TEXT_SCALE_SMALL)
-        x = (self.width - w) // 2
-        y = (self.height // 2) - 4
-        self.graphics.text(msg, x, y, scale=TEXT_SCALE_SMALL)
-        
-        # Redraw status indicators after clearing display
-        self.toggle_activity_indicator()
-        
-        self.i75.update()
-    
-    def update_display(self, mode, heading, target):
-        """Update LED matrix with current autopilot state.
-        
-        Only updates display when values change to minimize refresh overhead.
-        
-        Args:
-            mode: Autopilot mode ("auto", "standby", etc.")
-            heading: Current heading in degrees (0-359)
-            target: Target heading in degrees (0-359) or None
-        """
-        # Round values to minimize spurious updates
-        if heading is not None:
-            heading = round(heading)
-        if target is not None:
-            target = round(target)
-        
-        # Calculate heading difference if in auto mode
-        diff = None
-        if mode == "auto" and heading is not None and target is not None:
-            diff = normalize_heading_difference(target, heading)
-        
-        # Check if display needs updating
-        if (mode == self.last_mode and 
-            heading == self.last_heading and 
-            target == self.last_target and
-            diff == self.last_diff):
-            return  # No change, skip update
-        
-        # Store current values
-        self.last_mode = mode
-        self.last_heading = heading
-        self.last_target = target
-        self.last_diff = diff
-        
-        # Clear display
-        self.graphics.set_pen(self.pen_black)
-        self.graphics.clear()
-        
-        # ============================================================
-        # TOP SECTION: Current Heading (always line 1)
-        # ============================================================
-        self.graphics.set_thickness(TEXT_THICKNESS)
-        
-        if mode is None or heading is None:
-            # Show waiting state (use pre-calculated width)
-            self.graphics.set_pen(self.pen_gray)
-            x = (self.width - self.text_width_wait) // 2
-            self.graphics.text("WAIT", x, 10, scale=TEXT_SCALE_SMALL)
+    def set_heartbeat_ok(self):
+        """Set heartbeat indicator to OK state (green solid)."""
+        if self.heartbeat_ok != True:
+            self.heartbeat_ok = True
+            self._draw_heartbeat_indicator()
             self.i75.update()
+    
+    def set_heartbeat_stale(self):
+        """Set heartbeat indicator to stale state (red blinking)."""
+        if self.heartbeat_ok != False:
+            self.heartbeat_ok = False
+            self.indicator_blink_state = False
+            self._draw_heartbeat_indicator()
+            self.i75.update()
+    
+    def set_mag_heading_ok(self):
+        """Set mag heading indicator to OK state (green solid)."""
+        if self.mag_heading_ok != True:
+            self.mag_heading_ok = True
+            self._draw_mag_heading_indicator()
+            self.i75.update()
+    
+    def set_mag_heading_stale(self):
+        """Set mag heading indicator to stale state (red blinking)."""
+        if self.mag_heading_ok != False:
+            self.mag_heading_ok = False
+            self.indicator_blink_state = False
+            self._draw_mag_heading_indicator()
+            self.i75.update()
+    
+    def update_blink(self):
+        """Update blinking animation for any stale indicators.
+        Should be called periodically from blink task.
+        """
+        if not self.graphics:
             return
         
-        mode_lower = str(mode).lower()
+        # Check if any indicator needs blinking
+        needs_blink = not self.heartbeat_ok or not self.mag_heading_ok
+        if not needs_blink:
+            return
         
-        # Line 1 always shows "C" + current heading (both modes)
-        # Cache normalized heading
-        heading_normalized = int(heading) % 360
-        heading_str = "{:03d}".format(heading_normalized)
-        line = "C{}".format(heading_str)
-        
-        # Draw with compass color
-        self.graphics.set_pen(self.pen_compass)
-        self.graphics.text(line, 4, 10, scale=TEXT_SCALE)
-        
-        # ============================================================
-        # MIDDLE SECTION: Locked Heading (auto mode only)
-        # ============================================================
-        if mode_lower == "auto" and target is not None:
-            # Build display line: "A270" (locked autopilot heading)
-            target_normalized = int(target) % 360
-            target_str = "{:03d}".format(target_normalized)
-            line = "A{}".format(target_str)
+        current_ms = time.ticks_ms()
+        if time.ticks_diff(current_ms, self.last_blink_ms) >= INDICATOR_BLINK_INTERVAL:
+            self.indicator_blink_state = not self.indicator_blink_state
+            self.last_blink_ms = current_ms
             
-            # Draw in auto color (showing locked heading)
-            self.graphics.set_pen(self.pen_auto)
-            self.graphics.text(line, 4, 31, scale=TEXT_SCALE)
-        
-        # ============================================================
-        # BOTTOM SECTION: Heading Difference (auto mode only)
-        # ============================================================
-        if mode_lower == "auto" and diff is not None:
-            # Build display line: "+015" or "-020"
-            sign = "+" if diff >= 0 else "-"
-            diff_str = "{:03d}".format(abs(int(diff)))
-            line = "{}{}".format(sign, diff_str)
+            # Update both indicators if they need blinking
+            if not self.heartbeat_ok:
+                self._draw_heartbeat_indicator()
+            if not self.mag_heading_ok:
+                self._draw_mag_heading_indicator()
             
-            # Draw in diff color
-            self.graphics.set_pen(self.pen_diff)
-            self.graphics.text(line, 4, 52, scale=TEXT_SCALE)
+            self.i75.update()
+    
+    def _draw_heartbeat_indicator(self):
+        """Draw the heartbeat status indicator in lower left corner."""
+        if not self.graphics:
+            return
         
-        # ============================================================
-        # ACTIVITY INDICATOR: Redraw after clearing display
-        # ============================================================
-        # FIX: Redraw the activity indicator since we cleared the entire display
-        # This prevents the indicator from glitching when the display updates
-        
-        # Always draw lower RIGHT indicator (connection health)
-        if self.connection_health_ok:
-            self.graphics.set_pen(self.pen_green_bright)
-        else:
-            if self.activity_state:
-                self.graphics.set_pen(self.pen_red_bright)
+        try:
+            if self.heartbeat_ok:
+                # Green solid - heartbeat is current
+                self.graphics.set_pen(self.pen_green_bright)
             else:
-                self.graphics.set_pen(self.pen_red_dim)
+                # Red blinking - heartbeat is stale
+                if self.indicator_blink_state:
+                    self.graphics.set_pen(self.pen_red_bright)
+                else:
+                    self.graphics.set_pen(self.pen_red_dim)
+            
+            self.graphics.rectangle(INDICATOR_LEFT_X, INDICATOR_Y, INDICATOR_WIDTH, INDICATOR_HEIGHT)
+            
+        except Exception as e:
+            print("Heartbeat indicator draw error: {}".format(e))
+    
+    def _draw_mag_heading_indicator(self):
+        """Draw the magnetic heading status indicator in lower right corner."""
+        if not self.graphics:
+            return
         
-        self.graphics.rectangle(54, 61, 10, 3)
-        
-        # Additionally draw lower LEFT indicator (heading staleness)
-        if self.heading_ok:
-            self.graphics.set_pen(self.pen_green_bright)
-        else:
-            if self.activity_state:
-                self.graphics.set_pen(self.pen_orange_bright)
+        try:
+            if self.mag_heading_ok:
+                # Green solid - mag heading is current
+                self.graphics.set_pen(self.pen_green_bright)
             else:
-                self.graphics.set_pen(self.pen_orange_dim)
+                # Red blinking - mag heading is stale
+                if self.indicator_blink_state:
+                    self.graphics.set_pen(self.pen_red_bright)
+                else:
+                    self.graphics.set_pen(self.pen_red_dim)
+            
+            self.graphics.rectangle(INDICATOR_RIGHT_X, INDICATOR_Y, INDICATOR_WIDTH, INDICATOR_HEIGHT)
+            
+        except Exception as e:
+            print("Mag heading indicator draw error: {}".format(e))
+    
+    def update_heading(self, heading_radians):
+        """Update the display with new heading value.
         
-        self.graphics.rectangle(0, 61, 10, 3)
+        Args:
+            heading_radians: Heading in radians (after EWMA filter)
+        """
+        if not self.graphics:
+            return
         
-        # Draw keep-alive indicator
-        self.draw_keepalive_indicator()
+        try:
+            # Convert radians to degrees and normalize to 0-359
+            heading_degrees = int(heading_radians * RAD_TO_DEG) % 360
+            
+            # Only update if heading changed
+            if heading_degrees == self.last_heading:
+                return
+            
+            self.last_heading = heading_degrees
+            
+            # Redraw the entire display
+            self._redraw_display()
+            
+        except Exception as e:
+            print("Display update error: {}".format(e))
+    
+    def update_autopilot_state(self, state):
+        """Update autopilot state.
         
-        # Update the physical display
-        self.i75.update()
-
+        Args:
+            state: Autopilot state string (e.g., "auto", "standby")
+        """
+        if not self.graphics:
+            return
+        
+        try:
+            # Convert to lowercase for comparison
+            state_lower = str(state).lower() if state else None
+            
+            # Only update if state changed
+            if state_lower == self.autopilot_state:
+                return
+            
+            self.autopilot_state = state_lower
+            
+            # Redraw the entire display
+            self._redraw_display()
+            
+        except Exception as e:
+            print("Display autopilot state update error: {}".format(e))
+    
+    def update_target_heading(self, target_radians):
+        """Update target heading.
+        
+        Args:
+            target_radians: Target heading in radians
+        """
+        if not self.graphics:
+            return
+        
+        try:
+            # Convert radians to degrees and normalize to 0-359
+            target_degrees = int(target_radians * RAD_TO_DEG) % 360
+            
+            # Only update if target changed
+            if target_degrees == self.last_target:
+                return
+            
+            self.last_target = target_degrees
+            
+            # Redraw the entire display
+            self._redraw_display()
+            
+        except Exception as e:
+            print("Display target heading update error: {}".format(e))
+    
+    def _redraw_display(self):
+        """Internal method to redraw the entire display with current values."""
+        if not self.graphics:
+            return
+        
+        try:
+            # Clear the top and middle sections (rows 0-42)
+            self.graphics.set_pen(self.pen_black)
+            self.graphics.rectangle(0, 0, 64, 43)
+            
+            # Draw the current heading (top section) if available
+            if self.last_heading is not None:
+                heading_str = "{:03d}".format(self.last_heading)
+                text = "C{}".format(heading_str)
+                
+                self.graphics.set_pen(self.pen_white)
+                self.graphics.text(text, 4, 10, scale=TEXT_SCALE)
+            
+            # Draw the target heading (middle section) ONLY if in auto mode
+            if self.autopilot_state == "auto" and self.last_target is not None:
+                target_str = "{:03d}".format(self.last_target)
+                text = "A{}".format(target_str)
+                
+                self.graphics.set_pen(self.pen_white)
+                self.graphics.text(text, 4, 31, scale=TEXT_SCALE)
+            
+            # Redraw heartbeat indicator after clearing display
+            self._draw_heartbeat_indicator()
+            
+            # Update the physical display
+            self.i75.update()
+            
+        except Exception as e:
+            print("Display redraw error: {}".format(e))
+    
+    def show_status(self, status_text):
+        """Show status message (currently disabled - status shown via print statements).
+        
+        Args:
+            status_text: Text to display (ignored)
+        """
+        # Status messages are too large for the 3-pixel status bar
+        # They're logged to console instead
+        # The heading display is the primary visual indicator
+        pass
 
 # ============================================================================
 # WIFI CONNECTION
 # ============================================================================
 
 def is_wifi_connected():
-    """Check if WiFi is connected and has an IP address.
-    
-    Returns:
-        bool: True if connected with valid IP, False otherwise
-    """
+    """Check if WiFi is connected."""
     wlan = network.WLAN(network.STA_IF)
     return wlan.isconnected() and wlan.ifconfig()[0] != "0.0.0.0"
 
 
-def connect_wifi(max_retries=5, retry_delay=2):
-    """Connect to WiFi network with retries.
-    
-    Supports both DHCP and static IP configuration based on USE_STATIC_IP setting.
-    
-    Args:
-        max_retries: Maximum connection attempts
-        retry_delay: Seconds to wait between retries
-    
-    Returns:
-        str: Assigned IP address
-    
-    Raises:
-        Exception: If connection fails after all retries
-    """
+def connect_wifi(retry_delay=2):
+    """Connect to WiFi network."""
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     
-    # If already connected, return IP
     if is_wifi_connected():
-        ip = wlan.ifconfig()[0]
-        print("WiFi: Already connected - IP:", ip)
-        return ip
+        return wlan.ifconfig()[0]
     
-    # Configure static IP if enabled
     if USE_STATIC_IP:
-        print("WiFi: Configuring static IP: {}".format(STATIC_IP))
         wlan.ifconfig((STATIC_IP, STATIC_SUBNET, STATIC_GATEWAY, STATIC_DNS))
-    else:
-        print("WiFi: Using DHCP for IP configuration")
     
-    print("WiFi: Connecting to '{}'...".format(SSID))
     wlan.connect(SSID, PASSWORD)
     
-    # Wait for connection with retries
-    for attempt in range(max_retries):
-        timeout = 10  # seconds per attempt
-        start = time.time()
-        
-        while time.time() - start < timeout:
-            if is_wifi_connected():
-                ifconfig = wlan.ifconfig()
-                ip = ifconfig[0]
-                subnet = ifconfig[1]
-                gateway = ifconfig[2]
-                dns = ifconfig[3]
-                print("WiFi: Connected successfully!")
-                print("  IP:      {}".format(ip))
-                print("  Subnet:  {}".format(subnet))
-                print("  Gateway: {}".format(gateway))
-                print("  DNS:     {}".format(dns))
-                return ip
-            time.sleep(0.5)
-        
-        print("WiFi: Attempt {} failed".format(attempt + 1))
-        if attempt < max_retries - 1:
-            time.sleep(retry_delay)
+    # Wait for connection
+    timeout = 10
+    start = time.time()
+    while time.time() - start < timeout:
+        if is_wifi_connected():
+            return wlan.ifconfig()[0]
+        time.sleep(retry_delay)
     
-    raise Exception("Failed to connect after {} attempts".format(max_retries))
+    raise Exception("WiFi connection failed")
 
 
 # ============================================================================
-# DATA PROCESSING
+# WEBSOCKET CLIENT
 # ============================================================================
 
-@micropython.native
-def process_signalk_update(data, state_cache, deg_cache, last_raw_values):
-    """Process Signal K delta update and update caches.
+class SimpleWebSocketClient:
+    """Minimal WebSocket client."""
     
-    Signal K Delta Format:
-    {
-        "updates": [
-            {
-                "values": [
-                    {"path": "navigation.headingMagnetic", "value": 1.234},
-                    {"path": "steering.autopilot.state", "value": "auto"},
-                    {"path": "environment.heartbeat", "value": 1234567890}
-                ]
-            }
-        ]
+    def __init__(self):
+        self.sock = None
+        self.connected = False
+    
+    async def connect(self, host, port, path):
+        """Connect and perform WebSocket handshake."""
+        # Create socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setblocking(False)
+        
+        # Connect
+        addr = socket.getaddrinfo(host, port)[0][-1]
+        try:
+            self.sock.connect(addr)
+        except OSError as e:
+            if e.args[0] != 115:  # EINPROGRESS
+                raise
+        
+        await asyncio.sleep(0.1)
+        
+        # Generate WebSocket key
+        key = ubinascii.b2a_base64(bytes([i & 0xFF for i in range(16)])).decode().strip()
+        
+        # Send HTTP upgrade request
+        request = (
+            "GET {} HTTP/1.1\r\n"
+            "Host: {}:{}\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            "Sec-WebSocket-Key: {}\r\n"
+            "Sec-WebSocket-Version: 13\r\n"
+            "\r\n"
+        ).format(path, host, port, key)
+        
+        self.sock.send(request.encode())
+        
+        # Read HTTP response
+        await asyncio.sleep(0.2)
+        response = b""
+        try:
+            while True:
+                chunk = self.sock.recv(1024)
+                if not chunk:
+                    break
+                response += chunk
+                if b"\r\n\r\n" in response:
+                    break
+        except OSError:
+            pass
+        
+        if b"101" not in response:
+            raise Exception("WebSocket handshake failed")
+        
+        self.connected = True
+    
+    async def send_text(self, text):
+        """Send text frame."""
+        if not self.connected:
+            raise Exception("Not connected")
+        
+        # Text frame: FIN + opcode 1
+        frame = bytearray([0x81])
+        
+        # Payload length and mask
+        payload = text.encode()
+        length = len(payload)
+        
+        if length < 126:
+            frame.append(0x80 | length)  # Masked + length
+        elif length < 65536:
+            frame.append(0x80 | 126)
+            frame.extend(length.to_bytes(2, 'big'))
+        else:
+            frame.append(0x80 | 127)
+            frame.extend(length.to_bytes(8, 'big'))
+        
+        # Masking key
+        mask = bytes([0, 0, 0, 0])
+        frame.extend(mask)
+        
+        # Masked payload
+        frame.extend(payload)
+        
+        self.sock.send(frame)
+    
+    async def receive_frame(self, timeout=None):
+        """Receive WebSocket frame."""
+        if not self.connected:
+            return None, None
+        
+        start_time = time.time()
+        
+        # Read frame header
+        header = bytearray()
+        while len(header) < 2:
+            if timeout and (time.time() - start_time) > timeout:
+                return None, None
+            try:
+                chunk = self.sock.recv(1)
+                if chunk:
+                    header.extend(chunk)
+                else:
+                    await asyncio.sleep(0.01)
+            except OSError:
+                await asyncio.sleep(0.01)
+        
+        # Parse header
+        fin = header[0] & 0x80
+        opcode = header[0] & 0x0F
+        masked = header[1] & 0x80
+        payload_len = header[1] & 0x7F
+        
+        # Extended payload length
+        if payload_len == 126:
+            len_bytes = bytearray()
+            while len(len_bytes) < 2:
+                if timeout and (time.time() - start_time) > timeout:
+                    return None, None
+                try:
+                    chunk = self.sock.recv(1)
+                    if chunk:
+                        len_bytes.extend(chunk)
+                    else:
+                        await asyncio.sleep(0.01)
+                except OSError:
+                    await asyncio.sleep(0.01)
+            payload_len = int.from_bytes(len_bytes, 'big')
+        elif payload_len == 127:
+            len_bytes = bytearray()
+            while len(len_bytes) < 8:
+                if timeout and (time.time() - start_time) > timeout:
+                    return None, None
+                try:
+                    chunk = self.sock.recv(1)
+                    if chunk:
+                        len_bytes.extend(chunk)
+                    else:
+                        await asyncio.sleep(0.01)
+                except OSError:
+                    await asyncio.sleep(0.01)
+            payload_len = int.from_bytes(len_bytes, 'big')
+        
+        # Read mask key if present
+        if masked:
+            mask_key = bytearray()
+            while len(mask_key) < 4:
+                if timeout and (time.time() - start_time) > timeout:
+                    return None, None
+                try:
+                    chunk = self.sock.recv(1)
+                    if chunk:
+                        mask_key.extend(chunk)
+                    else:
+                        await asyncio.sleep(0.01)
+                except OSError:
+                    await asyncio.sleep(0.01)
+        
+        # Read payload
+        payload = bytearray()
+        while len(payload) < payload_len:
+            if timeout and (time.time() - start_time) > timeout:
+                return None, None
+            try:
+                remaining = payload_len - len(payload)
+                chunk = self.sock.recv(min(remaining, 1024))
+                if chunk:
+                    payload.extend(chunk)
+                else:
+                    await asyncio.sleep(0.01)
+            except OSError:
+                await asyncio.sleep(0.01)
+        
+        # Unmask if needed
+        if masked:
+            for i in range(len(payload)):
+                payload[i] ^= mask_key[i % 4]
+        
+        return opcode, bytes(payload)
+    
+    def close(self):
+        """Close connection."""
+        if self.sock:
+            try:
+                self.sock.close()
+            except:
+                pass
+        self.sock = None
+        self.connected = False
+
+
+# ============================================================================
+# SIGNAL K SUBSCRIPTION
+# ============================================================================
+
+async def subscribe_to_signal_k(ws_client):
+    """Subscribe to Signal K paths."""
+    
+    # Build subscription request
+    subscription = {
+        "context": "vessels.self",
+        "subscribe": []
     }
     
-    Args:
-        data: Parsed JSON delta message
-        state_cache: Dict for caching state values
-        deg_cache: Dict for caching degree values
-        last_raw_values: Dict tracking last raw values for change detection
+    # Add each path
+    for path in SUBSCRIBE.split(','):
+        path = path.strip()
+        if path:
+            subscription["subscribe"].append({
+                "path": path,
+                "period": 1000,
+                "format": "delta",
+                "policy": "instant",
+                "minPeriod": 200
+            })
     
-    Returns:
-        tuple: (display_changed, heartbeat_received, heading_changed)
-            - display_changed: True if display values changed
-            - heartbeat_received: True if heartbeat was in this update
-            - heading_changed: True if magnetic heading VALUE changed
-    """
-    display_changed = False
-    heartbeat_received = False
-    heading_changed = False
+    # Send subscription
+    await ws_client.send_text(json.dumps(subscription))
+
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def get_timestamp():
+    """Get formatted timestamp."""
+    t = time.localtime()
+    # Format: HH:MM:SS.mmm
+    ms = time.ticks_ms() % 1000
+    return "{:02d}:{:02d}:{:02d}.{:03d}".format(t[3], t[4], t[5], ms)
+
+
+def calculate_backoff(attempt, initial, max_delay, multiplier):
+    """Calculate exponential backoff delay."""
+    delay = initial * (multiplier ** attempt)
+    return min(delay, max_delay)
+
+
+# ============================================================================
+# MESSAGE DEDUPLICATION
+# ============================================================================
+
+class MessageDeduplicator:
+    """Deduplicate Signal K messages based on timestamp, source, path, and value."""
     
-    updates = data.get("updates")
-    if not updates:
-        return display_changed, heartbeat_received, heading_changed
-    
-    # Path constants for faster comparison
-    PATH_HEARTBEAT = "environment.heartbeat"
-    PATH_HEADING = "navigation.headingMagnetic"
-    PATH_AP_STATE = "steering.autopilot.state"
-    
-    for update in updates:
-        values = update.get("values")
-        if not values:
-            continue
+    def __init__(self, window_ms=150, cache_size=50):
+        """Initialize deduplicator.
         
-        for item in values:
-            path = item.get("path")
-            value = item.get("value")
-            
-            if path is None or value is None:
-                continue
-            
-            # Track environment.heartbeat independently
-            if path == PATH_HEARTBEAT:
-                heartbeat_received = True
-                continue  # Don't process further, just note we got it
-            
-            # Check if this is a path we care about for display
-            if path not in last_raw_values:
-                continue
-            
-            # Check if value actually changed (performance optimization for display updates)
-            last_value = last_raw_values[path]
-            value_changed = last_value != value
-            
-            if value_changed:
-                last_raw_values[path] = value
-                display_changed = True
-            
-            # Track heading VALUE changes for staleness indicator
-            # IMPORTANT: Only set heading_changed if the VALUE actually changed
-            # This ensures indicator only shows green when heading is actively changing
-            if path == PATH_HEADING and value_changed:
-                heading_changed = True
-            
-            # Process heading values (radians → degrees with smoothing)
-            # IMPORTANT: Always process headings even if value hasn't changed,
-            # because deg_cache needs to be populated (could be None after reconnect)
-            if path == PATH_HEADING or "heading" in path:
-                was_none = deg_cache[path] is None
-                deg_value = value * RAD_TO_DEG
-                
-                # Apply EMA smoothing for navigation heading only (but not on first value)
-                if path == PATH_HEADING and not was_none:
-                    old_value = deg_cache[path]
-                    deg_value = old_value + HEADING_SMOOTHING * (deg_value - old_value)
-                
-                # Always update deg_cache
-                deg_cache[path] = deg_value
-                
-                # If this is the first time we're populating deg_cache, trigger display update
-                if was_none:
-                    display_changed = True
-            
-            # Process state values (only if changed)
-            elif path == PATH_AP_STATE and value_changed:
-                state_cache[path] = value
+        Args:
+            window_ms: Time window in milliseconds for considering duplicates
+            cache_size: Maximum number of recent messages to track
+        """
+        self.window_ms = window_ms
+        self.cache_size = cache_size
+        self.cache = []  # List of (timestamp_ms, hash) tuples
     
-    return display_changed, heartbeat_received, heading_changed
+    def _compute_hash(self, timestamp, source, path, value):
+        """Compute a simple hash for the message components."""
+        # Convert value to string for hashing
+        value_str = str(value) if value is not None else "None"
+        # Combine components and compute hash
+        combined = "{}:{}:{}:{}".format(timestamp, source, path, value_str)
+        # Simple hash function
+        h = 0
+        for c in combined:
+            h = (h * 31 + ord(c)) & 0xFFFFFFFF
+        return h
+    
+    def is_duplicate(self, timestamp, source, path, value):
+        """Check if message is a duplicate.
+        
+        Args:
+            timestamp: Message timestamp string
+            source: Message source string
+            path: Data path string
+            value: Data value
+            
+        Returns:
+            True if message is a duplicate, False otherwise
+        """
+        if not ENABLE_DEDUPLICATION:
+            return False
+        
+        current_ms = time.ticks_ms()
+        msg_hash = self._compute_hash(timestamp, source, path, value)
+        
+        # Remove old entries outside the time window
+        # Only clean up when cache is getting full to avoid constant list operations
+        if len(self.cache) > int(self.cache_size * 0.8):
+            # Remove expired entries in-place (iterate backwards to avoid index issues)
+            i = len(self.cache) - 1
+            while i >= 0:
+                if time.ticks_diff(current_ms, self.cache[i][0]) >= self.window_ms:
+                    self.cache.pop(i)
+                i -= 1
+        
+        # Check if this hash exists in recent cache
+        is_dup = any(h == msg_hash for _, h in self.cache)
+        
+        # Add to cache if not duplicate
+        if not is_dup:
+            self.cache.append((current_ms, msg_hash))
+            # Trim cache if too large (remove oldest)
+            if len(self.cache) > self.cache_size:
+                self.cache.pop(0)
+        
+        return is_dup
 
 
-def format_status_line(state_cache, deg_cache):
-    """Format current status as console output string.
+# ============================================================================
+# VALUE CHANGE MONITORING
+# ============================================================================
+
+class ValueChangeMonitor:
+    """Monitor a specific value for changes and freshness."""
+    
+    def __init__(self, timeout_seconds, tolerance=0.0, debug=False):
+        """Initialize monitor.
+        
+        Args:
+            timeout_seconds: Time in seconds before considering data stale
+            tolerance: Minimum change to consider value changed (for numeric values)
+            debug: Enable debug output
+        """
+        self.timeout_seconds = timeout_seconds
+        self.tolerance = tolerance
+        self.debug = debug
+        self.last_update_time = None
+        self.last_value = None
+        self.is_fresh = False
+    
+    def update_value(self, new_value):
+        """Update with new value and check for changes.
+        
+        Args:
+            new_value: New value received
+            
+        Returns:
+            True if state changed from stale to fresh, False otherwise
+        """
+        current_time = time.time()
+        value_changed = False
+        
+        # Check if value actually changed
+        if self.last_value is None:
+            value_changed = True
+        elif isinstance(new_value, (int, float)) and isinstance(self.last_value, (int, float)):
+            # For numeric values, check against tolerance
+            value_changed = abs(new_value - self.last_value) > self.tolerance
+        else:
+            # For other types, check equality
+            value_changed = new_value != self.last_value
+        
+        # Update tracking
+        was_fresh = self.is_fresh
+        if value_changed:
+            self.last_update_time = current_time
+            self.last_value = new_value
+            self.is_fresh = True
+        
+        # Return True if state changed from stale to fresh
+        return not was_fresh and self.is_fresh and value_changed
+    
+    def check_timeout(self):
+        """Check if data has timed out.
+        
+        Returns:
+            True if state changed from fresh to stale, False otherwise
+        """
+        if self.last_update_time is None:
+            return False
+        
+        current_time = time.time()
+        time_since_update = current_time - self.last_update_time
+        
+        was_fresh = self.is_fresh
+        if time_since_update > self.timeout_seconds:
+            self.is_fresh = False
+        
+        # Return True if state changed from fresh to stale
+        return was_fresh and not self.is_fresh
+    
+    def reset(self):
+        """Reset monitor state."""
+        self.last_update_time = None
+        self.last_value = None
+        self.is_fresh = False
+
+
+class HeartbeatMonitor(ValueChangeMonitor):
+    """Specialized monitor for heartbeat signals."""
+    
+    def __init__(self, timeout_seconds, debug=False):
+        super().__init__(timeout_seconds, tolerance=0.0, debug=debug)
+    
+    def update_heartbeat(self):
+        """Update heartbeat timestamp.
+        
+        Returns:
+            True if state changed from stale to fresh, False otherwise
+        """
+        # For heartbeat, we just care that we received something
+        return self.update_value(time.time())
+
+
+# ============================================================================
+# EWMA FILTER
+# ============================================================================
+
+class EWMAFilter:
+    """Exponential Weighted Moving Average filter for smoothing values."""
+    
+    def __init__(self, alpha=0.2):
+        """Initialize EWMA filter.
+        
+        Args:
+            alpha: Smoothing factor (0.0-1.0). Lower values = more smoothing.
+                   alpha=1.0 means no smoothing (just pass through values)
+                   alpha=0.0 means infinite smoothing (value never changes)
+        """
+        self.alpha = max(0.0, min(1.0, alpha))  # Clamp to valid range
+        self.value = None
+        self.initialized = False
+    
+    def update(self, new_value):
+        """Update filter with new value and return smoothed result.
+        
+        Args:
+            new_value: New raw value
+            
+        Returns:
+            Smoothed value
+        """
+        if new_value is None:
+            return self.value
+        
+        if not self.initialized:
+            # Initialize with first value
+            self.value = new_value
+            self.initialized = True
+        else:
+            # Apply EWMA: value = alpha * new_value + (1 - alpha) * old_value
+            self.value = self.alpha * new_value + (1.0 - self.alpha) * self.value
+        
+        return self.value
+    
+    def reset(self):
+        """Reset filter state."""
+        self.value = None
+        self.initialized = False
+    
+    def get_value(self):
+        """Get current smoothed value without updating."""
+        return self.value
+
+
+# ============================================================================
+# MONITORING LOOP
+# ============================================================================
+
+async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None):
+    """Main monitoring loop.
     
     Args:
-        state_cache: Dict with state values
-        deg_cache: Dict with degree values
-    
-    Returns:
-        str: Formatted status line or None if data missing
+        display: Optional DisplayManager instance (created externally to share with blink task)
+        heartbeat_monitor: Optional HeartbeatMonitor instance (created externally to share with blink task)
+        mag_heading_monitor: Optional ValueChangeMonitor instance (created externally to share with blink task)
     """
-    mode = state_cache.get("steering.autopilot.state")
-    heading = deg_cache.get("navigation.headingMagnetic")
-    target = deg_cache.get("steering.autopilot.target.headingMagnetic")
     
-    if mode is None or heading is None:
-        return None
-    
-    # Format heading
-    heading_normalized = int(heading) % 360
-    heading_str = "{:03d}°".format(heading_normalized)
-    
-    if mode == "auto" and target is not None:
-        # Auto mode: show target and difference
-        target_normalized = int(target) % 360
-        target_str = "{:03d}°".format(target_normalized)
-        diff = normalize_heading_difference(target, heading)
-        diff_str = "{:+04d}°".format(int(diff))
-        return "Mode: AUTO | HDG: {} | TGT: {} | DIFF: {}".format(
-            heading_str, target_str, diff_str
-        )
-    else:
-        # Stby/Compass mode: just show heading
-        return "Mode: STBY/COMPASS | HDG: {}".format(heading_str)
-
-
-# ============================================================================
-# BACKGROUND TASKS
-# ============================================================================
-
-async def indicator_blink_task(display):
-    """Background task that blinks error indicators at regular intervals.
-
-    This task toggles the blink state for both health indicators when they're
-    in error mode (connection health red, heading staleness orange).
-    """
-    if DEBUG_TIMING:
-        print("Indicator blink task: Starting")
-
-    while True:
-        try:
-            display.activity_state = not display.activity_state
-            display.needs_refresh = True
-            await asyncio.sleep(INDICATOR_BLINK_INTERVAL)
-        except Exception as e:
-            print("Indicator blink error:", e)
-            await asyncio.sleep(INDICATOR_BLINK_INTERVAL)
-
-
-async def keepalive_indicator_task(display):
-    """Background task that blinks the keep-alive indicator every second.
-    
-    This provides a minimal visual confirmation that the program is running.
-    Sets state only; display update is coordinated in the main loop.
-    
-    Args:
-        display: DisplayManager instance
-    """
-    if DEBUG_TIMING:
-        print("Keep-alive indicator task: Starting")
-    
-    while True:
-        try:
-            display.keepalive_state = not display.keepalive_state
-            display.needs_refresh = True
-            await asyncio.sleep(1.0)  # Blink every second
-        except Exception as e:
-            print("Keep-alive indicator error:", e)
-            await asyncio.sleep(1.0)
-
-
-# ============================================================================
-# MAIN ASYNC EVENT LOOP
-# ============================================================================
-
-async def main():
-    """Main async event loop.
-    
-    Responsibilities:
-    -----------------
-    • Manage WiFi connection
-    • Maintain WebSocket connection to Signal K server
-    • Process incoming Signal K delta messages
-    • Update LED matrix display on data changes
-    • Monitor TWO INDEPENDENT health indicators:
-      1. Connection health (based ONLY on environment.heartbeat)
-      2. Heading staleness (based ONLY on navigation.headingMagnetic VALUE changes)
-    • Periodic garbage collection and health checks
-    
-    Performance Optimizations:
-    --------------------------
-    • Immediate display updates on data changes (responsive)
-    • Change detection to avoid redundant processing
-    • EMA smoothing for heading values (configurable)
-    • Minimal console output (configurable interval)
-    • Strategic garbage collection
-    """
-    print("\n" + "="*50)
-    print("SIGNAL K DISPLAY - Interstate 75 W")
-    print("="*50)
-    
-    # Run startup splash screen
-    if RUN_SPLASH:
-        run_startup_sequence()
-    
-    
-    # Initialize hardware
-    display = DisplayManager()
-    
-    # Show connecting message
-    display.show_connecting()
-    
-    # Initialize WebSocket response time tracker
-    ws_tracker = WSResponseTimeTracker(DEBUG_WS)
-    
-    # Start background task for error indicator blinking
-    asyncio.create_task(indicator_blink_task(display))
-    
-    # Start background task for keep-alive indicator
-    asyncio.create_task(keepalive_indicator_task(display))
+    # Initialize display if not provided
+    if display is None:
+        display = DisplayManager() if ENABLE_DISPLAY else None
     
     # Connect to WiFi
-    try:
-        ip = connect_wifi()
-    except Exception as e:
-        print("FATAL: WiFi connection failed:", e)
-        display.show_error("WiFi Fail")
-        return
-    
-    # Build WebSocket URL
-    ws_url = "ws://{}:{}/signalk/{}/stream?subscribe={}".format(
-        HOST, PORT, VERSION, SUBSCRIBE
-    )
-    
-    print("\nSignal K WebSocket URL:")
-    print(ws_url)
-    print()
-    
-    # State caches (minimize redundant processing)
-    state_cache = {
-        "steering.autopilot.state": None,
-    }
-    deg_cache = {
-        "navigation.headingMagnetic": None,
-        "steering.autopilot.target.headingMagnetic": None,
-    }
-    
-    # Track last raw values to detect changes (performance optimization)
-    last_raw_values = {
-        "navigation.headingMagnetic": None,
-        "steering.autopilot.state": None,
-        "steering.autopilot.target.headingMagnetic": None,
-    }
-    
-    # Connection state
-    websocket = None
-    
-    # Timing trackers - NOW COMPLETELY INDEPENDENT
-    last_print_ms = 0
-    last_wifi_check_ms = 0
-    last_gc_ms = 0
-    last_heartbeat_ms = time.ticks_ms()  # Track ONLY environmental.heartbeat updates
-    last_heading_change_ms = 0  # Track ONLY navigation.headingMagnetic changes
-    last_heading_value = None  # Track the actual heading value for change detection
-    
-    print("\n" + "="*50)
-    print("Entering main loop...")
-    print("Independent Status Indicators:")
-    print("  - Connection Health: Based on environment.heartbeat (60s timeout)")
-    print("  - Heading Staleness: Based on navigation.headingMagnetic VALUE changes (60s timeout)")
-    print("="*50 + "\n")
-    
-    # Main event loop
+    wifi_retry_count = 0
     while True:
-        # Cache current time for all checks in this iteration
-        now_ms = time.ticks_ms()
-        
-        # Periodic garbage collection
-        if time.ticks_diff(now_ms, last_gc_ms) >= GC_INTERVAL * 1000:
-            gc.collect()
-            last_gc_ms = now_ms
-        
-        # Periodic WiFi health check
-        if time.ticks_diff(now_ms, last_wifi_check_ms) >= WIFI_CHECK_INTERVAL * 1000:
-            if not is_wifi_connected():
-                print("WiFi: Connection lost - reconnecting...")
-                
-                if websocket:
-                    try:
-                        await websocket.close()
-                    except Exception:
-                        pass
-                    websocket = None
-                
-                try:
-                    ip = connect_wifi()
-                except Exception as e:
-                    print("WiFi: Reconnect failed:", e)
-                    display.show_error("WiFi Fail")
-                    await wait_for_reconnect_with_indicators(display, RECONNECT_WAIT)
-                    continue
-            
-            last_wifi_check_ms = now_ms
-        
-        # Ensure WebSocket is connected
-        if websocket is None:
-            try:
-                # Use current cached state (or WAIT) instead of re-printing CONNECT repeatedly
-                mode = state_cache.get("steering.autopilot.state")
-                heading = deg_cache.get("navigation.headingMagnetic")
-                target = deg_cache.get("steering.autopilot.target.headingMagnetic")
-                display.update_display(mode, heading, target)
-                
-                websocket = AsyncWebsocketClient()
-                
-                # Add timeout to prevent hanging when server is down
-                await asyncio.wait_for(websocket.handshake(ws_url), timeout=5.0)
-                
-                print("WS: Connected")
-                last_print_ms = now_ms
-                # Reset BOTH independent timers on new connection
-                last_heartbeat_ms = now_ms
-                last_heading_change_ms = 0
-                last_heading_value = None
-                # Reset BOTH indicators to OK state
-                display.set_connection_health_ok()
-                display.set_heading_ok()
-                display.needs_refresh = False  # Clear pending indicator updates
-                
-                # Clear display state to force update on next data
-                display.last_mode = None
-                display.last_heading = None
-                display.last_target = None
-                
-                # Immediately clear the "CONNECT" message by showing current state
-                # Even if we don't have data yet, this clears the CONNECT screen
-                display.update_display(mode, heading, target)
-                
-                gc.collect()
-                
-            except asyncio.TimeoutError:
-                print("WS: Connection timeout")
-                websocket = None
-                display.set_connection_health_error()
-                display.show_error("WS TIMEOUT")
-                await wait_for_reconnect_with_indicators(display, RECONNECT_WAIT)
-                continue
-            
-            except Exception as e:
-                print("WS: Connection failed:", e)
-                websocket = None
-                display.set_connection_health_error()
-                display.show_error("WS Fail")
-                await wait_for_reconnect_with_indicators(display, RECONNECT_WAIT)
-                continue
-        
-        # Receive and process WebSocket frame
         try:
-            # Track websocket response time if debugging enabled
-            ws_start = time.ticks_ms() if DEBUG_WS else 0
+            backoff_delay = calculate_backoff(wifi_retry_count, WIFI_BACKOFF_INITIAL,
+                                              WIFI_BACKOFF_MAX, WIFI_BACKOFF_MULTIPLIER)
+            print("[{}] Connecting to WiFi...".format(get_timestamp()))
+            ip = connect_wifi()
+            print("[{}] Connected! IP: {}".format(get_timestamp(), ip))
+            wifi_retry_count = 0  # Reset on success
             
-            # Add timeout to recv to prevent indefinite blocking
-            # This allows the loop to check for stale data and reconnect if needed
-            connection_closed = False
-            try:
-                message_text = await asyncio.wait_for(websocket.recv(), timeout=1.0)
-                # Check if connection was actually closed by server
-                if message_text is None:
-                    connection_closed = True
-            except asyncio.TimeoutError:
-                # No message received within timeout - not an error, just continue
-                # This allows us to check data staleness and other conditions
-                message_text = None
-            except NotImplementedError:
-                # WebSocket library doesn't handle certain frame types (ping/pong/continuation)
-                # This is a known limitation of the async_websocket_client library
-                # Just ignore these frames and continue - they're not data we need
-                if DEBUG_TIMING:
-                    print("DEBUG: WebSocket recv() NotImplementedError - ignoring unsupported frame type")
-                message_text = None
+            if display:
+                display.show_status("WIFI OK")
             
-            # Record response time if debugging enabled (only if message received)
-            if DEBUG_WS and message_text:
-                ws_time = time.ticks_diff(time.ticks_ms(), ws_start)
-                ws_tracker.record(ws_time)
-            
-            # Check if connection was closed by server (not just timeout)
-            if connection_closed:
-                print("WS: Connection closed by server")
-                websocket = None
-                display.set_connection_health_error()
-                display.show_error("WS CLOSE")
-                await wait_for_reconnect_with_indicators(display, RECONNECT_WAIT)
+            break
+        except Exception as e:
+            print("[{}] WiFi failed: {}".format(get_timestamp(), e))
+            wifi_retry_count += 1
+            print("[{}] Will retry WiFi in {}s...".format(get_timestamp(), backoff_delay))
+            await asyncio.sleep(backoff_delay)
+    
+    # Initialize message tracking
+    messages_received = 0
+    messages_skipped = 0
+    deduplicator = MessageDeduplicator(DEDUP_WINDOW_MS, DEDUP_CACHE_SIZE)
+    
+    # Initialize monitors if not provided
+    if heartbeat_monitor is None:
+        heartbeat_monitor = HeartbeatMonitor(HEARTBEAT_TIMEOUT, debug=HEARTBEAT_DEBUG)
+    if mag_heading_monitor is None:
+        mag_heading_monitor = ValueChangeMonitor(MAG_HEADING_TIMEOUT, 
+                                                tolerance=MAG_HEADING_TOLERANCE,
+                                                debug=MAG_HEADING_DEBUG)
+    
+    # Initialize EWMA filter for heading
+    heading_ewma_filter = None
+    if ENABLE_HEADING_EWMA:
+        heading_ewma_filter = EWMAFilter(alpha=HEADING_EWMA_ALPHA)
+        print("[{}] EWMA filter enabled for navigation.headingMagnetic (alpha={})".format(
+            get_timestamp(), HEADING_EWMA_ALPHA))
+    
+    # Parse subscription paths for confirmation tracking
+    subscription_paths = [p.strip() for p in SUBSCRIBE.split(',') if p.strip()]
+    subscriptions_confirmed = {sub: False for sub in subscription_paths}
+    
+    # Connect to Signal K
+    ws_client = None
+    signalk_retry_count = 0
+    
+    while True:
+        try:
+            if not is_wifi_connected():
+                print("[{}] WiFi disconnected, reconnecting...".format(get_timestamp()))
+                if ws_client:
+                    ws_client.close()
+                ws_client = None
+                subscriptions_confirmed = {sub: False for sub in subscription_paths}
+                heartbeat_monitor.reset()
+                mag_heading_monitor.reset()
+                if heading_ewma_filter:
+                    heading_ewma_filter.reset()
+                if display:
+                    display.show_status("NO WIFI")
+                wifi_retry_count = 0
                 continue
             
-            if message_text:
-                # Parse JSON
-                try:
-                    data = json.loads(message_text)
-                except Exception as e:
-                    print("JSON parse error:", e)
-                    data = None
+            if not ws_client:
+                backoff_delay = calculate_backoff(signalk_retry_count, SIGNALK_BACKOFF_INITIAL,
+                                                  SIGNALK_BACKOFF_MAX, SIGNALK_BACKOFF_MULTIPLIER)
+                print("[{}] Connecting to Signal K at {}:{}...".format(get_timestamp(), HOST, PORT))
                 
-                # Process Signal K delta - returns THREE independent flags
-                display_changed = False
-                heartbeat_received = False
-                heading_changed = False
+                if display:
+                    display.show_status("CONNECT")
                 
-                if data:
-                    display_changed, heartbeat_received, heading_changed = process_signalk_update(
-                        data, state_cache, deg_cache, last_raw_values
-                    )
+                ws_client = SimpleWebSocketClient()
+                await ws_client.connect(HOST, PORT, "/signalk/{}/stream".format(VERSION))
+                print("[{}] Connected to Signal K!".format(get_timestamp()))
                 
-                # ============================================================
-                # INDEPENDENT INDICATOR 1: Connection Health (heartbeat-based)
-                # ============================================================
-                if heartbeat_received:
-                    # Update heartbeat timestamp
-                    last_heartbeat_ms = now_ms
-                    # Set connection health indicator to OK (green)
-                    display.set_connection_health_ok()
-                    if DEBUG_TIMING:
-                        print("DEBUG: Heartbeat received - connection healthy")
+                signalk_retry_count = 0  # Reset on success
+                subscriptions_confirmed = {sub: False for sub in subscription_paths}
                 
-                # ============================================================
-                # INDEPENDENT INDICATOR 2: Heading Staleness (heading-based)
-                # ============================================================
-                if heading_changed:
-                    # Heading VALUE changed - reset staleness timer
-                    # This ensures indicator only shows green when heading is actively changing
-                    last_heading_change_ms = now_ms
-                    display.set_heading_ok()
-                    
-                    # Track the value for debugging
-                    if DEBUG_TIMING:
-                        current_heading_raw = last_raw_values.get("navigation.headingMagnetic")
-                        if current_heading_raw is not None:
-                            current_heading_deg = round(current_heading_raw * RAD_TO_DEG)
-                            if last_heading_value != current_heading_deg:
-                                print("DEBUG: Heading updated to {}° - heading healthy".format(current_heading_deg))
-                                last_heading_value = current_heading_deg
+                # Subscribe
+                print("[{}] Subscribing to paths...".format(get_timestamp()))
+                await subscribe_to_signal_k(ws_client)
                 
-                # Update display if display values changed
-                if display_changed:
-                    # Update LED matrix display immediately on change
+                if display:
+                    display.show_status("SUB OK")
+                
+                # Wait briefly for subscription confirmation
+                await asyncio.sleep(SUBSCRIPTION_INITIAL_WAIT)
+            
+            # Check for subscription confirmations periodically
+            all_confirmed = all(subscriptions_confirmed.values())
+            if not all_confirmed:
+                unconfirmed = [path for path, confirmed in subscriptions_confirmed.items() if not confirmed]
+                print("[{}] Waiting for subscription confirmations: {}".format(
+                    get_timestamp(), ", ".join(unconfirmed)))
+            
+            # Check monitors for timeouts
+            if heartbeat_monitor.check_timeout():
+                print("[{}] *** WARNING: Heartbeat timeout - Signal K data may be STALE ***".format(
+                    get_timestamp()))
+            
+            if mag_heading_monitor.check_timeout():
+                print("[{}] *** WARNING: Heading timeout - Magnetic heading data may be STALE ***".format(
+                    get_timestamp()))
+            
+            # Receive frame
+            opcode, payload = await ws_client.receive_frame(timeout=CONNECTION_TIMEOUT)
+            
+            if payload is not None:
+                timestamp = get_timestamp()
+                
+                if opcode == 0x1:  # Text frame
                     try:
-                        update_start = time.ticks_ms() if DEBUG_TIMING else 0
+                        text = payload.decode('utf-8')
                         
-                        mode = state_cache["steering.autopilot.state"]
-                        heading = deg_cache["navigation.headingMagnetic"]
-                        target = deg_cache["steering.autopilot.target.headingMagnetic"]
-                        
-                        display.update_display(mode, heading, target)
-                        
-                        if DEBUG_TIMING:
-                            update_time = time.ticks_diff(time.ticks_ms(), update_start)
-                            print("Display update took {}ms".format(update_time))
-                    except Exception as e:
-                        print("Display update error:", e)
-                        
-                        # Log to file if enabled
-                        log_error_to_file(
-                            "DISPLAY_UPDATE",
-                            e,  # Pass exception object, not string
-                            {
-                                "mode": mode,
-                                "heading": heading,
-                                "target": target,
-                                "last_mode": display.last_mode,
-                                "last_heading": display.last_heading,
-                                "last_target": display.last_target
-                            }
-                        )
-                        
-                        # Detailed debug information when debug mode is enabled
-                        if DEBUG_TIMING or DEBUG_WS:
-                            print("\n" + "="*50)
-                            print("DISPLAY UPDATE ERROR DETAILS:")
-                            print("="*50)
+                        # Try to parse as JSON
+                        try:
+                            msg = json.loads(text)
                             
-                            # Print full stack trace
-                            import sys
-                            sys.print_exception(e)
-                            
-                            # Print values being passed to display
-                            print("\nValues being displayed:")
-                            print("  Mode:", mode)
-                            print("  Heading:", heading)
-                            print("  Target:", target)
-                            print("  Display last_mode:", display.last_mode)
-                            print("  Display last_heading:", display.last_heading)
-                            print("  Display last_target:", display.last_target)
-                            
-                            print("="*50 + "\n")
+                            # Handle delta updates
+                            if 'updates' in msg:
+                                updates = msg.get('updates', [])
+                                current_ms = time.ticks_ms()
+                                
+                                # Track if entire message should be printed
+                                has_new_data = False
+                                
+                                for update in updates:
+                                    update_timestamp = update.get('timestamp', '')
+                                    source_info = update.get('$source') or update.get('source', {})
+                                    # Avoid creating new string if already a string
+                                    source_str = source_info if isinstance(source_info, str) else str(source_info)
+                                    
+                                    values = update.get('values', [])
+                                    for value_item in values:
+                                        value_path = value_item.get('path', '')
+                                        value_data = value_item.get('value')
+                                        
+                                        # Apply EWMA filter to navigation.headingMagnetic if enabled
+                                        if value_path == MAG_HEADING_PATH and heading_ewma_filter is not None:
+                                            if value_data is not None:
+                                                value_data = heading_ewma_filter.update(value_data)
+                                                # Update display with filtered heading
+                                                if display:
+                                                    display.update_heading(value_data)
+                                        
+                                        # Update autopilot state on display
+                                        if value_path == "steering.autopilot.state":
+                                            if display:
+                                                display.update_autopilot_state(value_data)
+                                        
+                                        # Update target heading on display
+                                        if value_path == "steering.autopilot.target.headingMagnetic":
+                                            if display and value_data is not None:
+                                                display.update_target_heading(value_data)
+                                        
+                                        # Check for heartbeat and update monitor
+                                        if value_path == HEARTBEAT_PATH:
+                                            state_changed = heartbeat_monitor.update_heartbeat()
+                                            if HEARTBEAT_DEBUG and state_changed:
+                                                print("[{}] *** Heartbeat detected - Signal K data is now FRESH ***".format(timestamp))
+                                        
+                                        # Check for magnetic heading changes and update monitor
+                                        if value_path == MAG_HEADING_PATH:
+                                            state_changed = mag_heading_monitor.update_value(value_data)
+                                            if MAG_HEADING_DEBUG and state_changed:
+                                                print("[{}] *** Heading changed - Magnetic heading data is now FRESH ***".format(timestamp))
+                                        
+                                        # Check subscription confirmation (only if not yet confirmed)
+                                        if value_path:
+                                            for sub_path in subscription_paths:
+                                                if not subscriptions_confirmed[sub_path] and sub_path in value_path:
+                                                    subscriptions_confirmed[sub_path] = True
+                                                    print("[{}] *** Subscription confirmed: {} ***".format(
+                                                        timestamp, sub_path))
+                                                    break  # No need to check other subscriptions for this path
+                                        
+                                        # Check for duplicates
+                                        messages_received += 1
+                                        
+                                        # Periodic garbage collection every 100 messages
+                                        if messages_received % 100 == 0:
+                                            gc.collect()
+                                        
+                                        is_dup = deduplicator.is_duplicate(
+                                            update_timestamp, source_str, value_path, value_data
+                                        )
+                                        
+                                        if is_dup:
+                                            messages_skipped += 1
+                                        else:
+                                            has_new_data = True
+                                            
+                                            # Print path and value in simplified format if enabled
+                                            if PRINT_PATH_VALUE and not PRINT_FULL_JSON:
+                                                # Convert radians to degrees for heading values
+                                                display_value = value_data
+                                                if value_data is not None and (value_path == MAG_HEADING_PATH or value_path == "steering.autopilot.target.headingMagnetic"):
+                                                    display_value = int(value_data * RAD_TO_DEG)
+                                                    print("[{}] {} = {}°".format(timestamp, value_path, display_value))
+                                                else:
+                                                    print("[{}] {} = {}".format(timestamp, value_path, value_data))
+                                
+                                # Print message if it contains non-duplicate data
+                                if has_new_data:
+                                    if PRINT_FULL_JSON:
+                                        if ENABLE_DEDUPLICATION and messages_skipped > 0:
+                                            
+                                            skip_pct = (messages_skipped * 100) // messages_received if messages_received > 0 else 0
+                                            
+                                            
+                                            print("[{}] TEXT: {} [dedup: {}/{} skipped ({}.{}%)]".format(
+                                                timestamp, text, messages_skipped, messages_received, 
+                                                skip_pct // 10, skip_pct % 10))
+                                        else:
+                                            print("[{}] TEXT: {}".format(timestamp, text))
+                                # If all values were duplicates, just note it
+                                
+                                #elif ENABLE_DEDUPLICATION:
+                                    
+                                    ###################################################################
+                                    #print("[{}] [duplicate message skipped]".format(timestamp))
+                                    ###################################################################                                 
+                            else:
+                                # Non-update message (like hello), always print
+                                print("[{}] TEXT: {}".format(timestamp, text))
+                        
+                        except Exception:
+                            # JSON parse failed or other error, print as-is
+                            print("[{}] TEXT: {}".format(timestamp, text))
+                    
+                    except Exception:
+                        print("[{}] TEXT (decode error): {} bytes".format(timestamp, len(payload)))
                 
-                # Update console print on change or periodic interval
-                time_for_update = time.ticks_diff(now_ms, last_print_ms) >= PRINT_INTERVAL * 1000
-                
-                if display_changed or time_for_update:
-                    # Print to console
-                    status = format_status_line(state_cache, deg_cache)
-                    if status:
-                        print(status)
-                        last_print_ms = now_ms
-            
-            # Check and report WebSocket statistics if debugging enabled
-            if DEBUG_WS:
-                ws_tracker.check_and_report(now_ms)
-            
-            # ============================================================
-            # CHECK INDEPENDENT TIMEOUTS
-            # ============================================================
-            
-            # Check heartbeat timeout (connection health)
-            if last_heartbeat_ms > 0:
-                time_since_heartbeat = time.ticks_diff(now_ms, last_heartbeat_ms) / 1000.0
-                
-                if time_since_heartbeat >= HEARTBEAT_TIMEOUT:
-                    # No heartbeat for 60+ seconds - connection health error
-                    display.set_connection_health_error()
-                    if DEBUG_TIMING:
-                        print("WARNING: No heartbeat for {:.1f}s - Connection health indicator RED".format(
-                            time_since_heartbeat))
-            
-            # Check heading change timeout (heading staleness)
-            if last_heading_change_ms > 0:
-                time_since_heading_change = time.ticks_diff(now_ms, last_heading_change_ms) / 1000.0
-                
-                if time_since_heading_change > HEADING_STALE_TIMEOUT:
-                    # Heading hasn't changed for 60+ seconds - heading stale
-                    display.set_heading_stale()
-                    if DEBUG_TIMING:
-                        print("WARNING: No heading change for {:.1f}s - Heading indicator ORANGE".format(
-                            time_since_heading_change))
-            
-        
-        except OSError as e:
-            print("WS: Error:", e)
-            
-            # Log to file if enabled
-            log_error_to_file(
-                "OSERROR",
-                e,  # Pass exception object, not string
-                {
-                    "mode": state_cache.get("steering.autopilot.state"),
-                    "heading": deg_cache.get("navigation.headingMagnetic"),
-                    "target": deg_cache.get("steering.autopilot.target.headingMagnetic"),
-                    "websocket_connected": websocket is not None,
-                    "wifi_connected": is_wifi_connected()
-                }
-            )
-            
-            # Detailed debug information when debug mode is enabled
-            if DEBUG_TIMING or DEBUG_WS:
-                print("\n" + "="*50)
-                print("DETAILED OSERROR INFORMATION:")
-                print("="*50)
-                
-                # Print full stack trace
-                import sys
-                sys.print_exception(e)
-                
-                # Print current state
-                print("\nCurrent State:")
-                print("  Mode:", state_cache.get("steering.autopilot.state"))
-                print("  Heading:", deg_cache.get("navigation.headingMagnetic"))
-                print("  Target:", deg_cache.get("steering.autopilot.target.headingMagnetic"))
-                
-                # Print connection state
-                print("\nConnection State:")
-                print("  WebSocket:", "Connected" if websocket else "Disconnected")
-                print("  WiFi:", "Connected" if is_wifi_connected() else "Disconnected")
-                
-                # Print memory info
-                print("\nMemory:")
-                print("  Free RAM: {} bytes".format(gc.mem_free()))
-                print("  Allocated RAM: {} bytes".format(gc.mem_alloc()))
-                
-                print("="*50 + "\n")
-            
-            try:
-                await websocket.close()
-            except Exception:
-                pass
-            websocket = None
-            display.set_connection_health_error()  # Show connection error
-            display.show_error("WS ERR")
-            gc.collect()
-            await wait_for_reconnect_with_indicators(display, RECONNECT_WAIT)
+                elif opcode == 0x2:  # Binary frame
+                    print("[{}] BINARY: {} bytes".format(timestamp, len(payload)))
+                elif opcode == 0x8:  # Close frame
+                    print("[{}] CLOSE - server closed connection".format(timestamp))
+                    ws_client.close()
+                    ws_client = None
+                    subscriptions_confirmed = {sub: False for sub in subscription_paths}
+                    heartbeat_monitor.reset()  # Reset monitors on close
+                    mag_heading_monitor.reset()
+                    if heading_ewma_filter:
+                        heading_ewma_filter.reset()
+                    if display:
+                        display.show_status("CLOSED")
+                elif opcode == 0x9:  # Ping frame
+                    print("[{}] PING".format(timestamp))
+                elif opcode == 0xA:  # Pong frame
+                    print("[{}] PONG".format(timestamp))
+                else:
+                    print("[{}] OPCODE 0x{:X}: {} bytes".format(timestamp, opcode, len(payload)))
+            else:
+                # No frame received - connection may be dead
+                print("[{}] No frame received - connection lost".format(get_timestamp()))
+                if ws_client:
+                    ws_client.close()
+                ws_client = None
+                subscriptions_confirmed = {sub: False for sub in subscription_paths}
+                heartbeat_monitor.reset()  # Reset monitors on connection loss
+                mag_heading_monitor.reset()
+                if heading_ewma_filter:
+                    heading_ewma_filter.reset()
+                if display:
+                    display.show_status("NO DATA")
         
         except Exception as e:
-            print("ERROR:", e)
-            
-            # Log to file if enabled
-            time_since_heartbeat = time.ticks_diff(now_ms, last_heartbeat_ms) / 1000.0 if last_heartbeat_ms > 0 else -1
-            time_since_heading = time.ticks_diff(now_ms, last_heading_change_ms) / 1000.0 if last_heading_change_ms > 0 else -1
-            
-            log_error_to_file(
-                "GENERIC",
-                e,  # Pass exception object, not string
-                {
-                    "mode": state_cache.get("steering.autopilot.state"),
-                    "heading": deg_cache.get("navigation.headingMagnetic"),
-                    "target": deg_cache.get("steering.autopilot.target.headingMagnetic"),
-                    "last_raw_heading": last_raw_values.get("navigation.headingMagnetic"),
-                    "websocket_connected": websocket is not None,
-                    "wifi_connected": is_wifi_connected(),
-                    "time_since_heartbeat_s": time_since_heartbeat,
-                    "time_since_heading_change_s": time_since_heading,
-                    "free_ram_bytes": gc.mem_free(),
-                    "allocated_ram_bytes": gc.mem_alloc()
-                }
-            )
-            
-            # Detailed debug information when debug mode is enabled
-            if DEBUG_TIMING or DEBUG_WS:
-                print("\n" + "="*50)
-                print("DETAILED ERROR INFORMATION:")
-                print("="*50)
-                
-                # Print full stack trace
-                import sys
-                sys.print_exception(e)
-                
-                # Print current state
-                print("\nCurrent State:")
-                print("  Mode:", state_cache.get("steering.autopilot.state"))
-                print("  Heading:", deg_cache.get("navigation.headingMagnetic"))
-                print("  Target:", deg_cache.get("steering.autopilot.target.headingMagnetic"))
-                print("  Last raw heading:", last_raw_values.get("navigation.headingMagnetic"))
-                
-                # Print connection state
-                print("\nConnection State:")
-                print("  WebSocket:", "Connected" if websocket else "Disconnected")
-                print("  WiFi:", "Connected" if is_wifi_connected() else "Disconnected")
-                
-                # Print timing information
-                print("\nTiming:")
-                print("  Time since heartbeat: {:.1f}s".format(time_since_heartbeat))
-                if time_since_heading > 0:
-                    print("  Time since heading change: {:.1f}s".format(time_since_heading))
-                else:
-                    print("  Time since heading change: Never")
-                
-                # Print memory info
-                print("\nMemory:")
-                print("  Free RAM: {} bytes".format(gc.mem_free()))
-                print("  Allocated RAM: {} bytes".format(gc.mem_alloc()))
-                
-                print("="*50 + "\n")
-            
-            try:
-                await websocket.close()
-            except Exception:
-                pass
-            websocket = None
-            display.set_connection_health_error()  # Show connection error
-            display.show_error("ERR")
-            gc.collect()
-            await wait_for_reconnect_with_indicators(display, RECONNECT_WAIT)
+            backoff_delay = calculate_backoff(signalk_retry_count, SIGNALK_BACKOFF_INITIAL,
+                                              SIGNALK_BACKOFF_MAX, SIGNALK_BACKOFF_MULTIPLIER)
+            print("[{}] Error: {}".format(get_timestamp(), e))
+            if ws_client:
+                ws_client.close()
+            ws_client = None
+            subscriptions_confirmed = {sub: False for sub in subscription_paths}
+            heartbeat_monitor.reset()  # Reset monitors on error
+            mag_heading_monitor.reset()
+            if heading_ewma_filter:
+                heading_ewma_filter.reset()
+            if display:
+                display.show_status("ERROR")
+            signalk_retry_count += 1
+            gc.collect()  # Clean up after error
+            print("[{}] Will reconnect Signal K in {}s...".format(get_timestamp(), backoff_delay))
+            await asyncio.sleep(backoff_delay)
         
-        # Coordinated display update at end of loop iteration
-        # Only runs when indicators need updating
-        if display.needs_refresh:
-            if DEBUG_TIMING:
-                print("DEBUG: Coordinated refresh - conn_health_ok={}, heading_ok={}".format(
-                    display.connection_health_ok, display.heading_ok))
-            display.toggle_activity_indicator()
-            display.i75.update()
-            display.needs_refresh = False
-        
-        # Small yield to allow other tasks to run
         await asyncio.sleep(0)
 
 
-# ============================================================================
-# STARTUP SPLASH SCREEN
-# ============================================================================
-
-def run_startup_sequence():
-    """Display animated startup splash screen on LED matrix.
+async def heartbeat_blink_task(display, heartbeat_monitor, mag_heading_monitor):
+    """Independent async task to handle heartbeat indicator blinking and state checking.
     
-    Shows a sequence of colored spirals followed by a multicolor starburst
-    that transitions to white before starting the main program.
+    This runs in parallel with the main monitor loop to ensure consistent
+    blinking at the configured interval, regardless of WebSocket state.
     
-    This function creates its own display instance and cleans it up afterward
-    to avoid interference with the main program's display management.
+    DESIGN NOTE: This task is the SINGLE SOURCE OF TRUTH for indicator display state.
+    The main loop updates monitor states (is_fresh flags), and this task reads those
+    states every 500ms to update the indicators. This separation keeps the logic simple:
+    - Main loop: Updates monitors based on data received
+    - Blink task: Updates indicators based on monitor state
+    
+    Args:
+        display: DisplayManager instance
+        heartbeat_monitor: HeartbeatMonitor instance
+        mag_heading_monitor: ValueChangeMonitor instance
     """
-    print("Splash: Starting splash screen sequence...")
+    if not display or not display.graphics:
+        return
     
-    # Create temporary display instance just for splash
-    i75 = Interstate75(
-        display=DISPLAY_INTERSTATE75_64X64,
-        color_order=Interstate75.COLOR_ORDER_BGR
-    )
-    display = i75.display
+    print("[{}] Heartbeat blink task started".format(get_timestamp()))
     
-    # Display dimensions
-    WIDTH = 64
-    HEIGHT = 64
-    CENTER_X = WIDTH // 2
-    CENTER_Y = HEIGHT // 2
-    
-    # Colors
-    BLACK = display.create_pen(0, 0, 0)
-    RED = display.create_pen(255, 0, 0)
-    GREEN = display.create_pen(0, 255, 0)
-    BLUE = display.create_pen(0, 0, 255)
-    WHITE = display.create_pen(255, 255, 255)
-    
-    def draw_spiral(color, duration):
-        """Draw an animated spiral that expands from center."""
-        print("Splash: Drawing {} spiral...".format("red" if color == RED else "green" if color == GREEN else "blue"))
-        
-        frames = int(duration * 50)  # 50 FPS
-        start_time = time.ticks_ms()
-        
-        for frame in range(frames):
-            elapsed = time.ticks_diff(time.ticks_ms(), start_time)
-            if elapsed > duration * 1000:
-                break
+    while True:
+        try:
+            # Check monitor states and update indicators if needed
+            if heartbeat_monitor:
+                if heartbeat_monitor.is_fresh and not display.heartbeat_ok:
+                    display.set_heartbeat_ok()
+                elif not heartbeat_monitor.is_fresh and display.heartbeat_ok:
+                    display.set_heartbeat_stale()
             
-            progress = frame / frames
+            if mag_heading_monitor:
+                if mag_heading_monitor.is_fresh and not display.mag_heading_ok:
+                    display.set_mag_heading_ok()
+                elif not mag_heading_monitor.is_fresh and display.mag_heading_ok:
+                    display.set_mag_heading_stale()
             
-            # Clear screen
-            display.set_pen(BLACK)
-            display.clear()
+            # Update blink animation
+            display.update_blink()
             
-            # Draw spiral
-            display.set_pen(color)
-            max_radius = int(32 * progress)
-            
-            for angle_deg in range(0, 360 * 3, 3):  # 3 rotations
-                angle = angle_deg * math.pi / 180
-                radius = (angle_deg / (360 * 3)) * max_radius
-                
-                x = int(CENTER_X + radius * math.cos(angle))
-                y = int(CENTER_Y + radius * math.sin(angle))
-                
-                if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-                    display.pixel(x, y)
-            
-            i75.update()
-            time.sleep(0.02)
-    
-    def draw_starburst(duration):
-        """Draw an animated starburst that transitions from multicolor to white."""
-        print("Splash: Drawing multicolor starburst...")
-        
-        # Phase 1: Multicolor outward expansion (first 60% of duration)
-        phase1_duration = int(duration * 600)
-        phase1_start = time.ticks_ms()
-        
-        while time.ticks_diff(time.ticks_ms(), phase1_start) < phase1_duration:
-            elapsed = time.ticks_diff(time.ticks_ms(), phase1_start)
-            progress = elapsed / phase1_duration
-            
-            display.set_pen(BLACK)
-            display.clear()
-            
-            # Multiple layers of particles for depth
-            for layer in range(3):
-                layer_offset = layer * 0.15
-                num_particles = 80 + layer * 20
-                
-                for i in range(num_particles):
-                    angle = (i / num_particles) * math.pi * 2
-                    
-                    # Outward expansion with variation
-                    distance = progress * (40 + layer * 8)
-                    
-                    # Add turbulence
-                    turbulence_x = math.sin(progress * 6 + i * 0.3) * 2
-                    turbulence_y = math.cos(progress * 6 + i * 0.5) * 2
-                    
-                    px = int(CENTER_X + distance * math.cos(angle) + turbulence_x)
-                    py = int(CENTER_Y + distance * math.sin(angle) + turbulence_y)
-                    
-                    if 0 <= px < WIDTH and 0 <= py < HEIGHT:
-                        # Muted, desaturated color palette - more atmospheric
-                        color_shift = (i / num_particles + layer_offset + progress * 0.2) % 1.0
-                        
-                        # Fade based on distance and layer
-                        distance_fade = max(0.2, 1.0 - (distance / 45))
-                        layer_fade = 0.6 + layer * 0.2
-                        fade = distance_fade * layer_fade * (0.7 + 0.3 * math.sin(progress * math.pi))
-                        
-                        if color_shift < 0.33:
-                            # Muted amber/gold tones
-                            r = int(160 * fade)
-                            g = int((100 + 50 * color_shift * 3) * fade)
-                            b = int(40 * fade)
-                        elif color_shift < 0.66:
-                            # Soft rose/lavender tones
-                            r = int((160 - 60 * (color_shift - 0.33) * 3) * fade)
-                            g = int((150 - 70 * (color_shift - 0.33) * 3) * fade)
-                            b = int((40 + 140 * (color_shift - 0.33) * 3) * fade)
-                        else:
-                            # Cool slate/periwinkle tones
-                            r = int((100 + 60 * (color_shift - 0.66) * 3) * fade)
-                            g = int((80 + 70 * (color_shift - 0.66) * 3) * fade)
-                            b = int((180 - 40 * (color_shift - 0.66) * 3) * fade)
-                        
-                        particle_color = display.create_pen(r, g, b)
-                        display.set_pen(particle_color)
-                        
-                        # Soft particles - mostly single pixels with occasional soft glow
-                        display.pixel(px, py)
-                        
-                        # Add soft glow to MORE particles for density
-                        if i % 6 == 0 and distance > 12:  # Changed from i % 8
-                            glow_r, glow_g, glow_b = int(r * 0.5), int(g * 0.5), int(b * 0.5)
-                            glow_color = display.create_pen(glow_r, glow_g, glow_b)
-                            display.set_pen(glow_color)
-                            if px + 1 < WIDTH:
-                                display.pixel(px + 1, py)
-                            if py + 1 < HEIGHT:
-                                display.pixel(px, py + 1)
-                        
-                        # More energy trails for density
-                        if i % 9 == 0 and distance > 15:  # Changed from i % 12
-                            trail_dist = distance * 0.6
-                            tx = int(CENTER_X + trail_dist * math.cos(angle) + turbulence_x * 0.6)
-                            ty = int(CENTER_Y + trail_dist * math.sin(angle) + turbulence_y * 0.6)
-                            if 0 <= tx < WIDTH and 0 <= ty < HEIGHT:
-                                trail_color = display.create_pen(int(r * 0.3), int(g * 0.3), int(b * 0.3))
-                                display.set_pen(trail_color)
-                                display.pixel(tx, ty)
-            
-            # Soft, pulsing core - very subtle
-            core_pulse = 0.6 + 0.4 * math.sin(progress * math.pi * 3)
-            for radius in range(1, 6):
-                core_fade = (6 - radius) / 5.0 * core_pulse * (1 - progress * 0.3)
-                core_r = int(140 * core_fade)
-                core_g = int(120 * core_fade)
-                core_b = int(80 * core_fade)
-                core_color = display.create_pen(core_r, core_g, core_b)
-                display.set_pen(core_color)
-                
-                # Draw subtle core outline
-                for angle in range(0, 360, 45):
-                    rad = angle * math.pi / 180
-                    cx = int(CENTER_X + radius * math.cos(rad))
-                    cy = int(CENTER_Y + radius * math.sin(rad))
-                    if 0 <= cx < WIDTH and 0 <= cy < HEIGHT:
-                        display.pixel(cx, cy)
-            
-            i75.update()
-            time.sleep(0.02)  # Slower frame rate for smoother feel
-        
-        # Phase 2: Gentle white bloom (last 0.4 seconds) - longer
-        phase2_duration = int(duration * 400)
-        phase2_start = time.ticks_ms()
-        
-        while time.ticks_diff(time.ticks_ms(), phase2_start) < phase2_duration:
-            elapsed = time.ticks_diff(time.ticks_ms(), phase2_start)
-            progress = elapsed / phase2_duration
-            
-            display.set_pen(BLACK)
-            display.clear()
-            
-            # Soft expanding light field - denser rings
-            for ring in range(7):  # Increased from 5 rings
-                ring_radius = int((6 + ring * 7) * (progress ** 0.7))
-                ring_fade = (7 - ring) / 7.0 * (0.5 + 0.5 * progress)
-                
-                brightness = int(200 * ring_fade)
-                ring_color = display.create_pen(brightness, brightness, brightness)
-                display.set_pen(ring_color)
-                
-                # Draw soft ring with irregular points - more density
-                for angle_deg in range(0, 360, 10):  # Changed from 12 to 10 degrees
-                    angle = angle_deg * math.pi / 180
-                    radius_var = ring_radius + int(3 * math.sin(angle * 3 + progress * 5))
-                    
-                    rx = int(CENTER_X + radius_var * math.cos(angle))
-                    ry = int(CENTER_Y + radius_var * math.sin(angle))
-                    
-                    if 0 <= rx < WIDTH and 0 <= ry < HEIGHT:
-                        display.pixel(rx, ry)
-                        # Add soft glow around points
-                        if rx + 1 < WIDTH:
-                            display.pixel(rx + 1, ry)
-                        if ry + 1 < HEIGHT:
-                            display.pixel(rx, ry + 1)
-            
-            # Soft center bloom
-            bloom_size = int(4 + progress * 12)
-            for radius in range(1, bloom_size, 2):
-                bloom_fade = 1.0 - (radius / bloom_size) * 0.5
-                bloom_brightness = int(255 * bloom_fade * progress)
-                bloom_color = display.create_pen(bloom_brightness, bloom_brightness, bloom_brightness)
-                display.set_pen(bloom_color)
-                
-                for angle in range(0, 360, 30):
-                    rad = angle * math.pi / 180
-                    bx = int(CENTER_X + radius * math.cos(rad))
-                    by = int(CENTER_Y + radius * math.sin(rad))
-                    if 0 <= bx < WIDTH and 0 <= by < HEIGHT:
-                        display.pixel(bx, by)
-            
-            i75.update()
-            time.sleep(0.015)
-        
-        # Final soft white glow
-        display.set_pen(WHITE)
-        display.clear()
-        i75.update()
-        time.sleep(0.15)
-    
-    try:
-        # Run the complete sequence
-        # 1. Red spiral - 1 second
-        draw_spiral(RED, 1)
-        
-        # 2. Green spiral - 1 second
-        draw_spiral(GREEN, 1)
-        
-        # 3. Blue spiral - 1 second
-        draw_spiral(BLUE, 1)
-        
-        # 4. Black screen - 1 second
-        display.set_pen(BLACK)
-        display.clear()
-        i75.update()
-        time.sleep(1)
-        
-        # 5. Multicolor starburst turning white - 1 second
-        draw_starburst(3)
-        
-        # 6. Final black before main program
-        display.set_pen(BLACK)
-        display.clear()
-        i75.update()
-        
-        print("Splash: Splash screen complete!")
-        
-    finally:
-        # Clean up display resources
-        print("Splash: Cleaning up display resources...")
-        del display
-        del i75
-        gc.collect()
-        time.sleep(0.2)  # Give hardware time to reset
-        print("Splash: Display cleanup complete")
-    
+            # Sleep for the blink interval (convert ms to seconds)
+            await asyncio.sleep_ms(INDICATOR_BLINK_INTERVAL)
+        except Exception as e:
+            print("[{}] Blink task error: {}".format(get_timestamp(), e))
+            await asyncio.sleep(1)  # Wait a bit before retrying
+
 
 # ============================================================================
 # ENTRY POINT
@@ -1811,13 +1253,23 @@ def run_startup_sequence():
 
 if __name__ == "__main__":
     try:
+        # Create shared instances for both tasks
+        display_instance = DisplayManager() if ENABLE_DISPLAY else None
+        heartbeat_monitor_instance = HeartbeatMonitor(HEARTBEAT_TIMEOUT, debug=HEARTBEAT_DEBUG)
+        mag_heading_monitor_instance = ValueChangeMonitor(MAG_HEADING_TIMEOUT, 
+                                                          tolerance=MAG_HEADING_TOLERANCE,
+                                                          debug=MAG_HEADING_DEBUG)
+        
+        # Create and run both tasks concurrently
+        async def main():
+            tasks = [monitor(display_instance, heartbeat_monitor_instance, mag_heading_monitor_instance)]
+            if display_instance and display_instance.graphics:
+                tasks.append(heartbeat_blink_task(display_instance, heartbeat_monitor_instance, mag_heading_monitor_instance))
+            await asyncio.gather(*tasks)
+        
         asyncio.run(main())
+            
     except KeyboardInterrupt:
-        print("\n\nInterrupted by user")
-        print("Cleaning up...")
-        gc.collect()
+        print("\n[{}] Stopped".format(get_timestamp()))
     except Exception as e:
-        print("\n\nFATAL ERROR:", e)
-        import sys
-        sys.print_exception(e)
-
+        print("\n[{}] FATAL: {}".format(get_timestamp(), e))
