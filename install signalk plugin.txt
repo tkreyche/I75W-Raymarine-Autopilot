@@ -55,7 +55,7 @@ module.exports = function(app) {
         };
         
         app.handleMessage('heartbeat', delta);
-      }, 10000);
+      }, 5000);
     },
     
     stop: function() {
@@ -87,4 +87,5 @@ echo "4. The plugin will send updates to 'environment.heartbeat' every 30 second
 echo ""
 
 echo "Monitor the path 'environment.heartbeat' in your WebSocket stream."
+
 
