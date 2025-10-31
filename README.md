@@ -13,7 +13,7 @@ This project assumes you are using a [Raymarine Tillerpilot](https://www.raymari
 
 ### General Description
 * This project uses off-the-shelf hardware to create an remote daylight-visible display for Raymarine Tillerpilots. A Tillerpilot is typically mounted near the stern of a boat, and it's incovenient to view the display. This display can be mounted in an better location. 
-* You can use the [I75W Matrix Display](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) by itself, but it only solves half the problem. It's also inconvenient to operate the Tillerpilot from the stern. A [Nauti-Control ST control](https://nauti-control.com/) module, with a handheld wireless keypad, is the essential component for a complete solution.
+* You can use this project by itself, but it only solves half the problem. It's also inconvenient to operate the Tillerpilot from the stern. A [Nauti-Control ST control](https://nauti-control.com/) module, with a handheld wireless keypad, is the essential component for a complete solution.
 * The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
 ### What the Display Shows
@@ -26,12 +26,12 @@ __Standby Mode:__
 __Auto Mode:__
 * The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
 * The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic.
-* The bottom line shows the difference between the two...this is a little redundant.
+* A third line is reservered for future changes.
 
 __Status Indicators:__
+* The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not.
+* The lower right corner status light is steady green if the magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * There is a blinking white status indicator in the center, that just indicates that the I75 firmware is running.
-* The lower right corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not.
-* The lower left corner status light is steady green if the magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 
 ### Hardware
 The hardware is off-the-shelf: a Pimoroni I75W board driving a separate LED Matrix Display. The I75 board connects to the display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64.
