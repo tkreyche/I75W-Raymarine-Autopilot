@@ -19,11 +19,11 @@ This project assumes you are using a [Raymarine Tillerpilot](https://www.raymari
 ### What the Display Shows
 The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. There are additional status indicators.
 
-__Standby Mode:__
+__Standby Mode:__\
 * The top line show "C" (for compass) and the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this navigation.headingMagnetic. The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
 * No other lines are shown.
 
-__Auto Mode:__
+__Auto Mode:__\
 * The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
 * The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic.
 * A third line is reservered for future changes.
