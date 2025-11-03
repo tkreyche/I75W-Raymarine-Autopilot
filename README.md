@@ -34,16 +34,16 @@ __Status Indicators:__
 * There is a blinking white status indicator in the center that indicates that the firmware is running.
 
 ### Hardware Overview
-The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. The system is capable of fancy graphics - Pimoroni has examples. Maxtrix displays are commonly used for outdoor signage. 
+The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples. This project emulates the Tillerpilot and mostly uses text.
 
 ### Controller Board
-* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth.
+* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth.
 * Other boards are available that include a Hub 75 interface, from Adafruit and other vendors for the Raspberry Pi and ESP-32. This code only runs on the Pimoroni board.
 
 ### LED Matrix Display
 The LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption.
 
-I'm using are 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The finer 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64 panels. The larger 128x64 2mm pitch panels are large for my boat. 
+I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The finer 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64 panels. The larger 128x64 2mm pitch panels are large for my boat.
 
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12v system. It can be powered from a USB-C cable or a simple 5v power cable.
