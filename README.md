@@ -33,26 +33,18 @@ __Status Indicators:__
 * The lower right corner status light is steady green if the magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * There is a blinking white status indicator in the center that indicates that the firmware is running.
 
-### Hardware
-The hardware is off-the-shelf and requires two items: 
-__Pimoroni I75W microcontroller board__
-[RP2350 powered controller for HUB75 LED matrix panel](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339). Includex custom micropython build with matrix drivers, wifi and Bluetooth.
+### Hardware Overview
+The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. The system is capable of fancy graphics - Pimoroni has examples. Maxtrix displays are commonly used for outdoor signage. 
 
-__LED Matrix Display__
-The I75 board connects to the display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64.
-
-
+### Controller Board
+* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display It's reliable, fast and includex custom micropython build with the matrix drivers, wifi and Bluetooth.
+* Other boards are available that include a Hub 75 interface, from Adafruit and other vendors for the Raspberry Pi and ESP-32. This code only runs on the Pimoroni board.
 
 ### LED Matrix Display
-The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). The system is capable of fancy graphics - Pimoroni has examples. Maxtrix displays are commonly used for outdoor signage. 
-These displays have a Hub 75 interface for connection to a microcontroller or small computer like a Raspberry Pi.
-Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. Finer pitch gives better light density and smaller display size.
+The LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. Finer pitch gives better light density and smaller display size. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption.
 
-The ones I'm using are 64x64 with 2mm pitch, which are 128x128mm in physical size. I also have some 128x64 2mm pitch panels but they are large for my boat. Panels can be chained to create a larger display, with the upper limit depending on the controller board.
+I'm using are 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. I also have some 128x64 2mm pitch panels but they are large for my boat. The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64.
 
-### Microcontroller Board
-* The LED matrix display panel need a separate controller. This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339). It's reliable and fast, and Pimoroni's custom micropython build includes the matrix drivers. The board has wifi and Bluetooth connectivity.
-* There are other boards available that include the Hub 75 interface from Adafruit and other vendors, for the Raspberry Pi and ESP-32. 
 
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12v system. It can be powered from a USB-C cable or a simple 5v power cable.
