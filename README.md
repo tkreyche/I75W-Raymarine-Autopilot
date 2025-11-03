@@ -32,6 +32,7 @@ __Status Indicators:__
 * The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not.
 * The lower right corner status light is steady green if the magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * There is a blinking white status indicator in the center that indicates that the firmware is running.
+* WIFI signal strength is show in light blue in the left-center of the status area. The bars are the same height, show from zero to five bars.
 
 ### Hardware Overview
 The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples. This project emulates the Tillerpilot and mostly uses text.
