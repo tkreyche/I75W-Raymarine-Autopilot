@@ -17,7 +17,7 @@ This project assumes you are using a [Raymarine Tillerpilot](https://www.raymari
 * The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
 ### What the Display Shows
-The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. There are additional communications status indicators.
+The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. There are additional status indicators.
 
 __Standby Mode:__
 * The top line show "C" (for compass) and the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this navigation.headingMagnetic. The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
