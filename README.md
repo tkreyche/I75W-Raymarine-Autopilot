@@ -65,10 +65,10 @@ An alternative solution is to use a wifi travel router connected to the Pi with 
 
 ### Signal K Software Installation
 This installation assumes you already have Signal K running on a Raspberry Pi. If not, the [Signal K website has good instructions](https://demo.signalk.org/documentation/Installation/Raspberry_Pi.html).
- * On you Raspberry Pi Signal K server, run the script that in signalk plugin.txt to create a heartbeat plugin, which is used to detect that the server connection is alive.
+ * On your Raspberry Pi Signal K server, run the script heartbeat.sh - this creates plugin that the display board uses to determine if the server connection is alive.
  * The plugin must be enabled in Server > Plugin Configuration > Heatbeat
    
-You should see the following paths in the Signal K Data Browser. If you don't see them, your Tillerpilot is not hooked up correctly to the Signal K server.
+With a Tillerpilot connected correctly, you should see the following paths in the Signal K Data Browser.
 * environment.heartbeat (this is from the heatbeat script)
 * navigation.headingMagnetic (from ST1000+)
 * navigation.magneticVariation (from ST1000+)
