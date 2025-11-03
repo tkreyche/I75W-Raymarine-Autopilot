@@ -68,7 +68,7 @@ This installation assumes you already have Signal K running on a Raspberry Pi. I
  * On your Raspberry Pi Signal K server, run the script heartbeat.sh - this creates plugin that the display board uses to determine if the server connection is alive.
  * The plugin must be enabled in Server > Plugin Configuration > Heatbeat
    
-With a Tillerpilot connected correctly, you should see the following paths in the Signal K Data Browser.
+With a Tillerpilot connected correctly, you should see the following paths in the Signal K Data Browser. In the image below, the configured data source ID is ST2000.
 * environment.heartbeat (this is from the heatbeat script)
 * navigation.headingMagnetic (from ST1000+)
 * navigation.magneticVariation (from ST1000+)
