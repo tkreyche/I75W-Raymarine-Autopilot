@@ -75,7 +75,7 @@ With a Tillerpilot connected correctly, you should see the following paths in th
 * steering.autopilot.state (from ST1000+)
 * steering.autopilot.target.headingMagnetic (from ST1000+ after the Tillerpilot's been put in Auto Mode)
 
-<img src="data_browser.png" width="600">
+<img src="data_browser.png" width="800">
 
 ### Software Installation on the I75W Board
 1) Follow the Pimoroni instructions on how to install the latest version of their custom Micropython distribution onto the I75W board.
