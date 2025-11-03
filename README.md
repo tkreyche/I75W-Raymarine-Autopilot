@@ -86,7 +86,7 @@ With a Tillerpilot connected correctly, you should see the following paths in th
 4) When this is done correctly, the board file system shows up on the left hand side of the display as Raspberry Pi Pico. If you're having problems there tutorials for using Thonny with these boards.
 5) Drop in the secrets file, modified for the wireless network, and the program file into the root. At a minimum you'll need to configure the wifi connection in secrets.
 
-### Software Description (optional read)
+### Software Description 
 The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
 The connection uses the Signal K websockets interface for lowest latency communications.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
