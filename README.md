@@ -5,7 +5,7 @@
 > [!NOTE]
 > **These are bad photos and will be replaced soon! They don't show the actual display brightness!**
 
-### Intent
+### Audience
 This project is for DIY sailors who have skills and interest in electronics projects. For those not inclined, there are commerically available (and more expensive) displays available. I'm not selling anything: the hardware is readily available from 3rd parties and the code here is free to use at your own risk.
 
 ### Tillerpilot
