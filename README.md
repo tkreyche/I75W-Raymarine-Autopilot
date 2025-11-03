@@ -59,7 +59,9 @@ There are a couple options for receiving Tillerpilot data on the Raspberry / Sig
 There may be future options to send Tillerpilot data from a NautiControl ST Wireless module directly to a I75W display, without the need for a Signal K server.
 
 ### Raspberry Pi and Signal K
-Signal K runs well on a Raspberry Pi 4B or 5, with dependencies on how many other devices are connected and sending data, such as running a NEMA 2000 backbone. I don't recommend using the built-in wireless on the Pi, especially in Access Point mode. It has numerous adjustments necessary to get it to work properly, such as disabling auto power down. And the minimal antenna is a fundamental problem. A infinitely better solution is to use a small travel wifi travel router connected to the Pi with an ethernet cable. Of course this is more equipment to maintain. Note that the Pi 5 is runs very fast with an NVMe drive, but it is difficult to get to work reliably.
+Signal K runs well on a Raspberry Pi 4B or 5, dependent on how many other devices are connected and sending data, such as running a NEMA 2000 backbone. 
+The hardware in this project can connect directly to the wifi module on the Pi in Access Point mode. Auto power should be disabled and other tweaks may be necessary. 
+An alternative solution is to use a wifi travel router connected to the Pi with an ethernet cable. Of course this is more equipment to maintain. 
 
 ### Signal K Software Installation
 This installation assumes you already have Signal K running on a Raspberry Pi. If not, the [Signal K website has good instructions](https://demo.signalk.org/documentation/Installation/Raspberry_Pi.html).
