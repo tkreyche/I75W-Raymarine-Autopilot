@@ -17,7 +17,7 @@ This project assumes you are using a [Raymarine Tillerpilot](https://www.raymari
 * The I75W Display allows sailors to get immediate visual feedback from their Tillerpilot when controlling it using the ST wireless module. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
 ### What the Display Shows
-The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. It's just a text display, not graphics or gauges.
+The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto.
 
 __Standby Mode:__
 * The top line show "C" (for compass) and the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this navigation.headingMagnetic. The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
@@ -31,10 +31,17 @@ __Auto Mode:__
 __Status Indicators:__
 * The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not.
 * The lower right corner status light is steady green if the magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
-* There is a blinking white status indicator in the center, that just indicates that the I75 firmware is running.
+* There is a blinking white status indicator in the center that indicates that the firmware is running.
 
 ### Hardware
-The hardware is off-the-shelf: a Pimoroni I75W board driving a separate LED Matrix Display. The I75 board connects to the display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64.
+The hardware is off-the-shelf and requires two items: 
+__Pimoroni I75W microcontroller board__
+[RP2350 powered controller for HUB75 LED matrix panel](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339). Includex custom micropython build with matrix drivers, wifi and Bluetooth.
+
+__LED Matrix Display__
+The I75 board connects to the display with a ribbon cable. The display used here is a 64x64 2mm pitch LED Matrix (128x128mm). The 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64.
+
+
 
 ### LED Matrix Display
 The LED matrix is used because it's bright, inexpensive, readily availble and updates quickly (unlike eink). The system is capable of fancy graphics - Pimoroni has examples. Maxtrix displays are commonly used for outdoor signage. 
