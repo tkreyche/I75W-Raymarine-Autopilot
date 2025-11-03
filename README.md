@@ -28,7 +28,8 @@ __Auto Mode:__
 * The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic.
 * A third line is reservered for future changes.
 
-__Status Indicators:__
+__Status Indicators:__\
+All status indicators are on the bottom four rows of the display.
 * The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not.
 * The lower right corner status light is steady green if the magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * There is a blinking white status indicator in the center that indicates that the firmware is running.
