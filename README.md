@@ -6,7 +6,7 @@
 > **These are bad photos and will be replaced soon! They don't show the actual display brightness and current firmware**
 
 ### Audience
-This project is for DIY sailors who have skills and interest in electronics projects. For those not inclined, there are commerically available (and more expensive) displays available. 
+This project is for DIY sailors who have skills and interest in electronics projects. For those not inclined, there are commerically available displays available. 
 
 ### General Description ###
 This display uses off-the-shelf hardware to create an remote daylight-visible display, to make it easier to operate a [Raymarine ST1000+ or ST2000+ Tiller Pilot](https://www.raymarine.com/en-us/our-products/boat-autopilots/autopilot-packs/st1000-st2000). Tiller Pilots are widely used and relatively low-cost solution for automated steering. They have well-known issues, such as minimal waterproofing, hard end stops and uses an outdated communications protocol. Other DIY autopilot options are available, such as pyPilot, which are not covered here.
@@ -34,16 +34,16 @@ Status indicators are on the bottom four rows of the display, and are the same i
 * WIFI signal strength is shown in light blue in the left-center of the status area. The bars are the same height, with 0=none, 1=poor, 2=weak, 3=fair, 4=good, 5=excellent.
 
 ### Hardware Overview
-The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples. This project emulates the Tillerpilot and mostly uses text.
+The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are bright and commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples...this project emulates the Tiller Pilot and mostly uses text.
 
 ### Controller Board
-* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth.
+* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth. The board plugs directly into the display, eliminating a ribbon cable.
 * Other boards are available that include a Hub 75 interface, from Adafruit and other vendors for the Raspberry Pi and ESP-32. This code only runs on the Pimoroni board.
 
 ### LED Matrix Display
 LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). They come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
 
-I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The 2mm pitch offers higher LED density and a compact package. This software only supports 64x64. The 128x64 2mm pitch panels are large for my boat.
+I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The 2mm pitch offers higher LED density and a compact package. This software only supports 64x64. The 128x64 2mm pitch panels are large for my boat. A 3mm pitch display has the same number of LEDS but in a 196x196mm size.
 
 ### Display Sources ###
 [Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) if you want details. The same display shows up on Amazon and direct China sites such as AliExpress. When you order, pay attention to the LED pitch. [Here's a link that worked](https://www.aliexpress.us/item/3256801763739168.html) for me about 6 months ago.
