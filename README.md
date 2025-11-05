@@ -46,7 +46,8 @@ LED matrix displays are bright, inexpensive, readily availble and update quickly
 I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The finer 2mm pitch offers higher LED density and a compact package. This software only supports 64x64. The 128x64 2mm pitch panels are large for my boat.
 
 ### Display Sources ###
-[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit.
+[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) 
+
 
 
 ### Power Requirement
