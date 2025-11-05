@@ -24,10 +24,10 @@ __Standby Mode:__
 __Auto Mode:__
 * The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
 * The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic. On the Tiller Pilot screen, this display replaces the C + mag heading..this display shows both.
-* A third line is reservered for future changes.
+* A third line is reservered.
 
 __Status Indicators:__\
-Status indicators are on the bottom four rows of the display, and are the same for both Standby and Auto modes.
+Status indicators are on the bottom four rows of the display, and are the same in all modes.
 * The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not. It uses a custom Signal K heartbeat, described later.
 * The lower right corner status light is steady green if the Tillerpilot magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * There is a blinking white status indicator in the center that indicates that the firmware on the board is running.
