@@ -41,7 +41,7 @@ The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board
 * Other boards are available that include a Hub 75 interface, from Adafruit and other vendors for the Raspberry Pi and ESP-32. This code only runs on the Pimoroni board.
 
 ### LED Matrix Display
-The LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). Matrix displays come in various LED dimentions, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
+LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). They come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
 
 I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The finer 2mm pitch offers higher LED density and a compact package. Other display sizes are available, but this software is only supports 64x64 panels. The larger 128x64 2mm pitch panels are large for my boat.
 
