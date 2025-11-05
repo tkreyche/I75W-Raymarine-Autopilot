@@ -6,6 +6,18 @@ import uasyncio as asyncio
 import socket
 import ubinascii
 import gc
+from micropython import const
+
+# Cache time functions for performance (avoid module lookup overhead in tight loops)
+_ticks_ms = time.ticks_ms
+_ticks_diff = time.ticks_diff
+_time = time.time
+_localtime = time.localtime
+_gc_collect = gc.collect
+_gc_threshold = gc.threshold
+
+# Configure GC for better performance (keep auto-GC as safety net)
+_gc_threshold(8192)  # Raise threshold to reduce auto-GC interruptions (default ~2048)
 
 try:
     import json
@@ -88,27 +100,164 @@ MAG_HEADING_DEBUG = getattr(secrets, 'MAG_HEADING_DEBUG', True)
 ENABLE_HEADING_EWMA = getattr(secrets, 'ENABLE_HEADING_EWMA', True)
 HEADING_EWMA_ALPHA = getattr(secrets, 'HEADING_EWMA_ALPHA', 0.2)  # 0.0-1.0, lower = more smoothing
 
+# EWMA filter settings for WiFi RSSI
+ENABLE_RSSI_EWMA = getattr(secrets, 'ENABLE_RSSI_EWMA', True)
+RSSI_EWMA_ALPHA = getattr(secrets, 'RSSI_EWMA_ALPHA', 0.3)  # 0.0-1.0, lower = more smoothing
+
 # Radian to degree conversion constant (more efficient than math.degrees)
-RAD_TO_DEG = 57.29577951308232  # 180 / π
+RAD_TO_DEG = const(57.29577951308232)  # 180 / π
+
+# WebSocket frame opcodes
+WS_OPCODE_TEXT = const(0x1)
+WS_OPCODE_BINARY = const(0x2)
+WS_OPCODE_CLOSE = const(0x8)
+WS_OPCODE_PING = const(0x9)
+WS_OPCODE_PONG = const(0xA)
+
+# WebSocket recv buffer sizes
+WS_RECV_PAYLOAD = const(1024)  # Payload chunk size
+WS_RECV_HTTP = const(1024)     # HTTP handshake buffer
+
+# Percentage calculation helpers
+PERCENT_MULTIPLIER = const(100)
+PERCENT_DECIMAL_DIVISOR = const(10)
+
+# Garbage collection settings
+GC_COLLECT_INTERVAL = getattr(secrets, 'GC_COLLECT_INTERVAL', 100)
 
 # Display settings
 ENABLE_DISPLAY = getattr(secrets, 'ENABLE_DISPLAY', True) and DISPLAY_AVAILABLE
-TEXT_SCALE = 0.7     # Scale for all text
-TEXT_THICKNESS = 2   # Thickness for better visibility on LED matrix
+TEXT_SCALE = const(0.75)     # Scale for all text
+TEXT_THICKNESS = const(2)   # Thickness for better visibility on LED matrix
 COLOR_WHITE = (255, 255, 255)
 
 # Status indicator settings
 INDICATOR_BLINK_INTERVAL = getattr(secrets, 'INDICATOR_BLINK_INTERVAL', 500)  # ms between blinks
-INDICATOR_LEFT_X = 0
-INDICATOR_RIGHT_X = 54  # Right side (64 - 10 = 54)
-INDICATOR_Y = 61
-INDICATOR_WIDTH = 10
-INDICATOR_HEIGHT = 3
+INDICATOR_LEFT_X = const(0)
+INDICATOR_RIGHT_X = const(54)  # Right side (64 - 10 = 54)
+INDICATOR_Y = const(60)
+INDICATOR_WIDTH = const(10)
+INDICATOR_HEIGHT = const(4)
+INDICATOR_CENTER_X = const(31)  # Center (64 / 2 - 1 = 31, for 1-pixel wide centered indicator)
+INDICATOR_RUNNING_WIDTH = const(1)  # Running indicator is 1 pixel wide
 
 # Indicator colors
 COLOR_GREEN_BRIGHT = (0, 255, 0)
-COLOR_RED_BRIGHT = (255, 0, 0)
+COLOR_BLUE_BRIGHT = (0, 127, 255)
+COLOR_RED_BRIGHT = (255, 110, 0)
 COLOR_RED_DIM = (0, 0, 0)  # Off when blinking
+
+# RSSI bar indicator settings
+RSSI_BAR_START_X = const(16)  # Start column for RSSI bars
+RSSI_BAR_COUNT = const(5)      # Number of bars (1-5)
+RSSI_BAR_WIDTH = const(1)      # Each bar is 1 pixel wide
+RSSI_BAR_HEIGHT = const(4)     # Bars are 4 pixels high
+RSSI_BAR_Y = const(60)         # Bottom row (same as other status indicators)
+
+
+# ============================================================================
+# TIMESTAMP HELPERS
+# ============================================================================
+
+def get_timestamp():
+    """Get formatted timestamp with milliseconds."""
+    t = _localtime()
+    ms = _ticks_ms() % 1000
+    return "{:02d}:{:02d}:{:02d}.{:03d}".format(t[3], t[4], t[5], ms)
+
+
+# ============================================================================
+# EXPONENTIAL BACKOFF
+# ============================================================================
+
+def calculate_backoff(retry_count, initial, maximum, multiplier):
+    """Calculate exponential backoff delay.
+    
+    Args:
+        retry_count: Number of retries so far
+        initial: Initial delay in seconds
+        maximum: Maximum delay in seconds
+        multiplier: Backoff multiplier
+        
+    Returns:
+        Delay in seconds
+    """
+    if retry_count == 0:
+        return 0
+    
+    delay = initial * (multiplier ** (retry_count - 1))
+    return min(delay, maximum)
+
+
+# ============================================================================
+# MESSAGE DEDUPLICATION
+# ============================================================================
+
+class MessageDeduplicator:
+    """Efficient message deduplicator using circular buffer."""
+    
+    def __init__(self, window_ms=150, cache_size=50):
+        """Initialize deduplicator.
+        
+        Args:
+            window_ms: Time window for deduplication in milliseconds
+            cache_size: Maximum number of messages to cache
+        """
+        self.window_ms = window_ms
+        self.cache_size = cache_size
+        
+        # Circular buffer for messages
+        self.messages = []
+        self.next_index = 0
+        
+        # Pre-allocate cache to avoid dynamic growth
+        for _ in range(cache_size):
+            self.messages.append(None)
+    
+    def _hash_message(self, timestamp, source, path, value):
+        """Create a hash tuple for the message."""
+        # For numeric values, round to reduce false non-duplicates
+        if isinstance(value, float):
+            value = round(value, 6)
+        return (timestamp, source, path, value)
+    
+    def is_duplicate(self, timestamp, source, path, value):
+        """Check if message is a duplicate within the time window.
+        
+        Args:
+            timestamp: ISO timestamp string
+            source: Source identifier string
+            path: Signal K path string
+            value: Value (any type)
+            
+        Returns:
+            True if duplicate, False otherwise
+        """
+        if not ENABLE_DEDUPLICATION:
+            return False
+        
+        current_ms = _ticks_ms()
+        msg_hash = self._hash_message(timestamp, source, path, value)
+        
+        # Check existing messages
+        for cached_msg in self.messages:
+            if cached_msg is not None:
+                cached_hash, cached_time = cached_msg
+                
+                # Skip if too old
+                if _ticks_diff(current_ms, cached_time) > self.window_ms:
+                    continue
+                
+                # Check for duplicate
+                if cached_hash == msg_hash:
+                    return True
+        
+        # Add to cache
+        self.messages[self.next_index] = (msg_hash, current_ms)
+        self.next_index = (self.next_index + 1) % self.cache_size
+        
+        return False
+
 
 # ============================================================================
 # DISPLAY MANAGER
@@ -135,6 +284,10 @@ class DisplayManager:
         self.indicator_blink_state = False  # For blinking animation
         self.last_blink_ms = 0
         
+        # RSSI indicator state
+        self.rssi_dbm = None  # Current RSSI value in dBm
+        self.rssi_bars = 0    # Number of bars to display (0-5)
+        
         if not ENABLE_DISPLAY:
             return
         
@@ -156,6 +309,7 @@ class DisplayManager:
             self.pen_black = self.graphics.create_pen(0, 0, 0)
             self.pen_white = self.graphics.create_pen(*COLOR_WHITE)
             self.pen_green_bright = self.graphics.create_pen(*COLOR_GREEN_BRIGHT)
+            self.pen_blue_bright = self.graphics.create_pen(*COLOR_BLUE_BRIGHT)            
             self.pen_red_bright = self.graphics.create_pen(*COLOR_RED_BRIGHT)
             self.pen_red_dim = self.graphics.create_pen(*COLOR_RED_DIM)
             
@@ -168,11 +322,13 @@ class DisplayManager:
             # Draw initial indicators (both red until data received)
             self._draw_heartbeat_indicator()
             self._draw_mag_heading_indicator()
+            self._draw_running_indicator()
+            self._draw_rssi_bars()
+
             
             self.i75.update()
             
             print("Display initialized successfully")
-            
         except Exception as e:
             print("Failed to initialize display: {}".format(e))
             self.i75 = None
@@ -209,41 +365,44 @@ class DisplayManager:
             self.i75.update()
     
     def update_blink(self):
-        """Update blinking animation for any stale indicators.
+        """Update blinking animation for any stale indicators and the running indicator.
         Should be called periodically from blink task.
         """
         if not self.graphics:
             return
         
-        # Check if any indicator needs blinking
-        needs_blink = not self.heartbeat_ok or not self.mag_heading_ok
-        if not needs_blink:
-            return
-        
-        current_ms = time.ticks_ms()
-        if time.ticks_diff(current_ms, self.last_blink_ms) >= INDICATOR_BLINK_INTERVAL:
+        # Always update blink state for the running indicator
+        current_ms = _ticks_ms()
+        if _ticks_diff(current_ms, self.last_blink_ms) >= INDICATOR_BLINK_INTERVAL:
             self.indicator_blink_state = not self.indicator_blink_state
             self.last_blink_ms = current_ms
             
-            # Update both indicators if they need blinking
+            # Always draw the running indicator
+            self._draw_running_indicator()
+            
+            # Always draw RSSI bars
+            self._draw_rssi_bars()
+            
+            # Update status indicators if they need blinking
             if not self.heartbeat_ok:
                 self._draw_heartbeat_indicator()
             if not self.mag_heading_ok:
                 self._draw_mag_heading_indicator()
+
             
             self.i75.update()
     
     def _draw_heartbeat_indicator(self):
-        """Draw the heartbeat status indicator in lower left corner."""
+        """Draw the heartbeat indicator in bottom left corner."""
         if not self.graphics:
             return
         
         try:
             if self.heartbeat_ok:
-                # Green solid - heartbeat is current
+                # Green solid = heartbeat OK
                 self.graphics.set_pen(self.pen_green_bright)
             else:
-                # Red blinking - heartbeat is stale
+                # Red blinking = heartbeat stale
                 if self.indicator_blink_state:
                     self.graphics.set_pen(self.pen_red_bright)
                 else:
@@ -255,16 +414,16 @@ class DisplayManager:
             print("Heartbeat indicator draw error: {}".format(e))
     
     def _draw_mag_heading_indicator(self):
-        """Draw the magnetic heading status indicator in lower right corner."""
+        """Draw the mag heading indicator in bottom right corner."""
         if not self.graphics:
             return
         
         try:
             if self.mag_heading_ok:
-                # Green solid - mag heading is current
+                # Green solid = heading OK
                 self.graphics.set_pen(self.pen_green_bright)
             else:
-                # Red blinking - mag heading is stale
+                # Red blinking = heading stale
                 if self.indicator_blink_state:
                     self.graphics.set_pen(self.pen_red_bright)
                 else:
@@ -274,6 +433,58 @@ class DisplayManager:
             
         except Exception as e:
             print("Mag heading indicator draw error: {}".format(e))
+    
+    def _draw_running_indicator(self):
+        """Draw the running status indicator in bottom center (white blinking)."""
+        if not self.graphics:
+            return
+        
+        try:
+            # White blinking - always blinks to show program is running
+            if self.indicator_blink_state:
+                self.graphics.set_pen(self.pen_white)
+            else:
+                self.graphics.set_pen(self.pen_black)
+            
+            self.graphics.rectangle(INDICATOR_CENTER_X, INDICATOR_Y, INDICATOR_RUNNING_WIDTH, INDICATOR_HEIGHT)
+            
+        except Exception as e:
+            print("Running indicator draw error: {}".format(e))
+    
+    def _draw_rssi_bars(self):
+        """Draw the RSSI signal strength bars in the status area.
+        
+        Draws 0-5 bars based on WiFi signal strength:
+        - 5 bars: -30 to -50 dBm (Excellent)
+        - 4 bars: -50 to -60 dBm (Good)
+        - 3 bars: -60 to -67 dBm (Fair)
+        - 2 bars: -67 to -70 dBm (Weak)
+        - 1 bar:  -70 to -80 dBm (Very weak)
+        - 0 bars: worse than -80 dBm
+        
+        Each bar is 1 pixel wide and 4 pixels high, positioned at columns 16-20.
+        """
+        if not self.graphics:
+            return
+        
+        try:
+            # Draw each bar position
+            for bar_num in range(RSSI_BAR_COUNT):
+                bar_x = RSSI_BAR_START_X + bar_num
+                
+                if bar_num < self.rssi_bars:
+                    # This bar should be lit (green)
+                    self.graphics.set_pen(self.pen_blue_bright)
+                else:
+                    # This bar should be off (black)
+                    self.graphics.set_pen(self.pen_black)
+                
+                # Draw the bar (1 pixel wide, 4 pixels high)
+                self.graphics.rectangle(bar_x, RSSI_BAR_Y, RSSI_BAR_WIDTH, RSSI_BAR_HEIGHT)
+            
+        except Exception as e:
+            print("RSSI bars draw error: {}".format(e))
+
     
     def update_heading(self, heading_radians):
         """Update the display with new heading value.
@@ -350,6 +561,48 @@ class DisplayManager:
         except Exception as e:
             print("Display target heading update error: {}".format(e))
     
+    def update_rssi(self, rssi_dbm):
+        """Update RSSI signal strength bars.
+        
+        Args:
+            rssi_dbm: WiFi signal strength in dBm (typically -30 to -90)
+        """
+        if not self.graphics:
+            return
+        
+        try:
+            # Determine number of bars based on signal strength
+            # 5 bars: -30 to -50 dBm (Excellent)
+            # 4 bars: -50 to -60 dBm (Good)
+            # 3 bars: -60 to -67 dBm (Fair)
+            # 2 bars: -67 to -70 dBm (Weak)
+            # 1 bar:  -70 to -80 dBm (Very weak)
+            # 0 bars: worse than -80 dBm
+            
+            if rssi_dbm is None:
+                bars = 0
+            elif rssi_dbm >= -50:
+                bars = 5
+            elif rssi_dbm >= -60:
+                bars = 4
+            elif rssi_dbm >= -67:
+                bars = 3
+            elif rssi_dbm >= -70:
+                bars = 2
+            elif rssi_dbm >= -80:
+                bars = 1
+            else:
+                bars = 0
+            
+            # Only update if bars changed
+            if bars != self.rssi_bars or rssi_dbm != self.rssi_dbm:
+                self.rssi_dbm = rssi_dbm
+                self.rssi_bars = bars
+                # The bars will be drawn in the next update_blink() call
+            
+        except Exception as e:
+            print("RSSI update error: {}".format(e))
+    
     def _redraw_display(self):
         """Internal method to redraw the entire display with current values."""
         if not self.graphics:
@@ -406,7 +659,7 @@ def is_wifi_connected():
     return wlan.isconnected() and wlan.ifconfig()[0] != "0.0.0.0"
 
 
-def connect_wifi(retry_delay=2):
+async def connect_wifi(retry_delay=2):
     """Connect to WiFi network."""
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -421,11 +674,11 @@ def connect_wifi(retry_delay=2):
     
     # Wait for connection
     timeout = 10
-    start = time.time()
-    while time.time() - start < timeout:
+    start = _time()
+    while _time() - start < timeout:
         if is_wifi_connected():
             return wlan.ifconfig()[0]
-        time.sleep(retry_delay)
+        await asyncio.sleep(retry_delay)
     
     raise Exception("WiFi connection failed")
 
@@ -435,20 +688,20 @@ def connect_wifi(retry_delay=2):
 # ============================================================================
 
 class SimpleWebSocketClient:
-    """Minimal WebSocket client."""
+    """Simple async WebSocket client."""
     
     def __init__(self):
+        """Initialize WebSocket client."""
         self.sock = None
         self.connected = False
     
     async def connect(self, host, port, path):
-        """Connect and perform WebSocket handshake."""
-        # Create socket
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        """Connect to WebSocket server."""
+        addr = socket.getaddrinfo(host, port)[0][-1]
+        
+        self.sock = socket.socket()
         self.sock.setblocking(False)
         
-        # Connect
-        addr = socket.getaddrinfo(host, port)[0][-1]
         try:
             self.sock.connect(addr)
         except OSError as e:
@@ -478,7 +731,7 @@ class SimpleWebSocketClient:
         response = b""
         try:
             while True:
-                chunk = self.sock.recv(1024)
+                chunk = self.sock.recv(WS_RECV_HTTP)
                 if not chunk:
                     break
                 response += chunk
@@ -527,15 +780,15 @@ class SimpleWebSocketClient:
         if not self.connected:
             return None, None
         
-        start_time = time.time()
+        start_time = _time()
         
-        # Read frame header
+        # Read frame header (2 bytes)
         header = bytearray()
         while len(header) < 2:
-            if timeout and (time.time() - start_time) > timeout:
+            if timeout and (_time() - start_time) > timeout:
                 return None, None
             try:
-                chunk = self.sock.recv(1)
+                chunk = self.sock.recv(2 - len(header))
                 if chunk:
                     header.extend(chunk)
                 else:
@@ -553,10 +806,10 @@ class SimpleWebSocketClient:
         if payload_len == 126:
             len_bytes = bytearray()
             while len(len_bytes) < 2:
-                if timeout and (time.time() - start_time) > timeout:
+                if timeout and (_time() - start_time) > timeout:
                     return None, None
                 try:
-                    chunk = self.sock.recv(1)
+                    chunk = self.sock.recv(2 - len(len_bytes))
                     if chunk:
                         len_bytes.extend(chunk)
                     else:
@@ -567,10 +820,10 @@ class SimpleWebSocketClient:
         elif payload_len == 127:
             len_bytes = bytearray()
             while len(len_bytes) < 8:
-                if timeout and (time.time() - start_time) > timeout:
+                if timeout and (_time() - start_time) > timeout:
                     return None, None
                 try:
-                    chunk = self.sock.recv(1)
+                    chunk = self.sock.recv(8 - len(len_bytes))
                     if chunk:
                         len_bytes.extend(chunk)
                     else:
@@ -579,14 +832,14 @@ class SimpleWebSocketClient:
                     await asyncio.sleep(0.01)
             payload_len = int.from_bytes(len_bytes, 'big')
         
-        # Read mask key if present
+        # Read mask key if present (4 bytes)
         if masked:
             mask_key = bytearray()
             while len(mask_key) < 4:
-                if timeout and (time.time() - start_time) > timeout:
+                if timeout and (_time() - start_time) > timeout:
                     return None, None
                 try:
-                    chunk = self.sock.recv(1)
+                    chunk = self.sock.recv(4 - len(mask_key))
                     if chunk:
                         mask_key.extend(chunk)
                     else:
@@ -597,11 +850,11 @@ class SimpleWebSocketClient:
         # Read payload
         payload = bytearray()
         while len(payload) < payload_len:
-            if timeout and (time.time() - start_time) > timeout:
+            if timeout and (_time() - start_time) > timeout:
                 return None, None
             try:
                 remaining = payload_len - len(payload)
-                chunk = self.sock.recv(min(remaining, 1024))
+                chunk = self.sock.recv(min(remaining, WS_RECV_PAYLOAD))
                 if chunk:
                     payload.extend(chunk)
                 else:
@@ -657,100 +910,11 @@ async def subscribe_to_signal_k(ws_client):
 
 
 # ============================================================================
-# UTILITY FUNCTIONS
-# ============================================================================
-
-def get_timestamp():
-    """Get formatted timestamp."""
-    t = time.localtime()
-    # Format: HH:MM:SS.mmm
-    ms = time.ticks_ms() % 1000
-    return "{:02d}:{:02d}:{:02d}.{:03d}".format(t[3], t[4], t[5], ms)
-
-
-def calculate_backoff(attempt, initial, max_delay, multiplier):
-    """Calculate exponential backoff delay."""
-    delay = initial * (multiplier ** attempt)
-    return min(delay, max_delay)
-
-
-# ============================================================================
-# MESSAGE DEDUPLICATION
-# ============================================================================
-
-class MessageDeduplicator:
-    """Deduplicate Signal K messages based on timestamp, source, path, and value."""
-    
-    def __init__(self, window_ms=150, cache_size=50):
-        """Initialize deduplicator.
-        
-        Args:
-            window_ms: Time window in milliseconds for considering duplicates
-            cache_size: Maximum number of recent messages to track
-        """
-        self.window_ms = window_ms
-        self.cache_size = cache_size
-        self.cache = []  # List of (timestamp_ms, hash) tuples
-    
-    def _compute_hash(self, timestamp, source, path, value):
-        """Compute a simple hash for the message components."""
-        # Convert value to string for hashing
-        value_str = str(value) if value is not None else "None"
-        # Combine components and compute hash
-        combined = "{}:{}:{}:{}".format(timestamp, source, path, value_str)
-        # Simple hash function
-        h = 0
-        for c in combined:
-            h = (h * 31 + ord(c)) & 0xFFFFFFFF
-        return h
-    
-    def is_duplicate(self, timestamp, source, path, value):
-        """Check if message is a duplicate.
-        
-        Args:
-            timestamp: Message timestamp string
-            source: Message source string
-            path: Data path string
-            value: Data value
-            
-        Returns:
-            True if message is a duplicate, False otherwise
-        """
-        if not ENABLE_DEDUPLICATION:
-            return False
-        
-        current_ms = time.ticks_ms()
-        msg_hash = self._compute_hash(timestamp, source, path, value)
-        
-        # Remove old entries outside the time window
-        # Only clean up when cache is getting full to avoid constant list operations
-        if len(self.cache) > int(self.cache_size * 0.8):
-            # Remove expired entries in-place (iterate backwards to avoid index issues)
-            i = len(self.cache) - 1
-            while i >= 0:
-                if time.ticks_diff(current_ms, self.cache[i][0]) >= self.window_ms:
-                    self.cache.pop(i)
-                i -= 1
-        
-        # Check if this hash exists in recent cache
-        is_dup = any(h == msg_hash for _, h in self.cache)
-        
-        # Add to cache if not duplicate
-        if not is_dup:
-            self.cache.append((current_ms, msg_hash))
-            # Trim cache if too large (remove oldest)
-            if len(self.cache) > self.cache_size:
-                self.cache.pop(0)
-        
-        return is_dup
-
-
-# ============================================================================
-# VALUE CHANGE MONITORING
+# VALUE CHANGE MONITOR
 # ============================================================================
 
 class ValueChangeMonitor:
-    """Monitor a specific value for changes and freshness."""
+    """Monitor a value for changes and timeouts."""
     
     def __init__(self, timeout_seconds, tolerance=0.0, debug=False):
         """Initialize monitor.
@@ -776,7 +940,7 @@ class ValueChangeMonitor:
         Returns:
             True if state changed from stale to fresh, False otherwise
         """
-        current_time = time.time()
+        current_time = _time()
         value_changed = False
         
         # Check if value actually changed
@@ -808,7 +972,7 @@ class ValueChangeMonitor:
         if self.last_update_time is None:
             return False
         
-        current_time = time.time()
+        current_time = _time()
         time_since_update = current_time - self.last_update_time
         
         was_fresh = self.is_fresh
@@ -838,7 +1002,7 @@ class HeartbeatMonitor(ValueChangeMonitor):
             True if state changed from stale to fresh, False otherwise
         """
         # For heartbeat, we just care that we received something
-        return self.update_value(time.time())
+        return self.update_value(_time())
 
 
 # ============================================================================
@@ -916,7 +1080,7 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
             backoff_delay = calculate_backoff(wifi_retry_count, WIFI_BACKOFF_INITIAL,
                                               WIFI_BACKOFF_MAX, WIFI_BACKOFF_MULTIPLIER)
             print("[{}] Connecting to WiFi...".format(get_timestamp()))
-            ip = connect_wifi()
+            ip = await connect_wifi()
             print("[{}] Connected! IP: {}".format(get_timestamp(), ip))
             wifi_retry_count = 0  # Reset on success
             
@@ -933,6 +1097,7 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
     # Initialize message tracking
     messages_received = 0
     messages_skipped = 0
+    gc_counter = 0  # Counter for manual GC triggering
     deduplicator = MessageDeduplicator(DEDUP_WINDOW_MS, DEDUP_CACHE_SIZE)
     
     # Initialize monitors if not provided
@@ -960,6 +1125,7 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
     
     while True:
         try:
+            # FIX: Check WiFi status and reconnect with backoff if needed
             if not is_wifi_connected():
                 print("[{}] WiFi disconnected, reconnecting...".format(get_timestamp()))
                 if ws_client:
@@ -972,7 +1138,28 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
                     heading_ewma_filter.reset()
                 if display:
                     display.show_status("NO WIFI")
-                wifi_retry_count = 0
+                
+                # FIX: Actually attempt to reconnect with exponential backoff
+                while not is_wifi_connected():
+                    try:
+                        backoff_delay = calculate_backoff(wifi_retry_count, WIFI_BACKOFF_INITIAL,
+                                                          WIFI_BACKOFF_MAX, WIFI_BACKOFF_MULTIPLIER)
+                        print("[{}] Attempting WiFi reconnection in {}s...".format(get_timestamp(), backoff_delay))
+                        await asyncio.sleep(backoff_delay)
+                        
+                        print("[{}] Connecting to WiFi...".format(get_timestamp()))
+                        ip = await connect_wifi()
+                        print("[{}] WiFi reconnected! IP: {}".format(get_timestamp(), ip))
+                        wifi_retry_count = 0  # Reset on success
+                        
+                        if display:
+                            display.show_status("WIFI OK")
+                        break
+                    except Exception as e:
+                        print("[{}] WiFi reconnection failed: {}".format(get_timestamp(), e))
+                        wifi_retry_count += 1
+                
+                # After reconnecting WiFi, continue to reconnect to Signal K
                 continue
             
             if not ws_client:
@@ -1022,7 +1209,7 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
             if payload is not None:
                 timestamp = get_timestamp()
                 
-                if opcode == 0x1:  # Text frame
+                if opcode == WS_OPCODE_TEXT:  # Text frame
                     try:
                         text = payload.decode('utf-8')
                         
@@ -1033,7 +1220,7 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
                             # Handle delta updates
                             if 'updates' in msg:
                                 updates = msg.get('updates', [])
-                                current_ms = time.ticks_ms()
+                                current_ms = _ticks_ms()
                                 
                                 # Track if entire message should be printed
                                 has_new_data = False
@@ -1090,10 +1277,12 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
                                         
                                         # Check for duplicates
                                         messages_received += 1
+                                        gc_counter += 1
                                         
                                         # Periodic garbage collection every 100 messages
-                                        if messages_received % 100 == 0:
-                                            gc.collect()
+                                        if gc_counter >= GC_COLLECT_INTERVAL:
+                                            _gc_collect()
+                                            gc_counter = 0
                                         
                                         is_dup = deduplicator.is_duplicate(
                                             update_timestamp, source_str, value_path, value_data
@@ -1119,12 +1308,12 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
                                     if PRINT_FULL_JSON:
                                         if ENABLE_DEDUPLICATION and messages_skipped > 0:
                                             
-                                            skip_pct = (messages_skipped * 100) // messages_received if messages_received > 0 else 0
+                                            skip_pct = (messages_skipped * PERCENT_MULTIPLIER) // messages_received if messages_received > 0 else 0
                                             
                                             
                                             print("[{}] TEXT: {} [dedup: {}/{} skipped ({}.{}%)]".format(
                                                 timestamp, text, messages_skipped, messages_received, 
-                                                skip_pct // 10, skip_pct % 10))
+                                                skip_pct // PERCENT_DECIMAL_DIVISOR, skip_pct % PERCENT_DECIMAL_DIVISOR))
                                         else:
                                             print("[{}] TEXT: {}".format(timestamp, text))
                                 # If all values were duplicates, just note it
@@ -1145,9 +1334,9 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
                     except Exception:
                         print("[{}] TEXT (decode error): {} bytes".format(timestamp, len(payload)))
                 
-                elif opcode == 0x2:  # Binary frame
+                elif opcode == WS_OPCODE_BINARY:  # Binary frame
                     print("[{}] BINARY: {} bytes".format(timestamp, len(payload)))
-                elif opcode == 0x8:  # Close frame
+                elif opcode == WS_OPCODE_CLOSE:  # Close frame
                     print("[{}] CLOSE - server closed connection".format(timestamp))
                     ws_client.close()
                     ws_client = None
@@ -1158,9 +1347,9 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
                         heading_ewma_filter.reset()
                     if display:
                         display.show_status("CLOSED")
-                elif opcode == 0x9:  # Ping frame
+                elif opcode == WS_OPCODE_PING:  # Ping frame
                     print("[{}] PING".format(timestamp))
-                elif opcode == 0xA:  # Pong frame
+                elif opcode == WS_OPCODE_PONG:  # Pong frame
                     print("[{}] PONG".format(timestamp))
                 else:
                     print("[{}] OPCODE 0x{:X}: {} bytes".format(timestamp, opcode, len(payload)))
@@ -1193,11 +1382,64 @@ async def monitor(display=None, heartbeat_monitor=None, mag_heading_monitor=None
             if display:
                 display.show_status("ERROR")
             signalk_retry_count += 1
-            gc.collect()  # Clean up after error
+            _gc_collect()  # Clean up after error
             print("[{}] Will reconnect Signal K in {}s...".format(get_timestamp(), backoff_delay))
             await asyncio.sleep(backoff_delay)
         
         await asyncio.sleep(0)
+
+
+async def wifi_signal_monitor_task(display, rssi_ewma_filter=None):
+    """Independent async task to monitor WiFi signal strength.
+    
+    Checks WiFi signal strength (RSSI) every 1 second and updates the display.
+    This runs in parallel with other tasks without interfering.
+    
+    Args:
+        display: DisplayManager instance (can be None if display not available)
+        rssi_ewma_filter: Optional EWMAFilter instance for smoothing RSSI values
+    """
+    print("[{}] WiFi signal monitor task started".format(get_timestamp()))
+    
+    while True:
+        try:
+            # Get the WLAN interface (returns existing interface if already created)
+            wlan = network.WLAN(network.STA_IF)
+            
+            if wlan and wlan.isconnected():
+                # Get signal strength (RSSI - Received Signal Strength Indicator)
+                # Typical range: -30 (excellent) to -90 (poor) dBm
+                rssi = wlan.status('rssi')
+                
+                # Apply EWMA filter if enabled
+                if rssi_ewma_filter:
+                    rssi = rssi_ewma_filter.update(rssi)
+                    # Round to nearest integer for display
+                    rssi = round(rssi) if rssi is not None else None
+                
+                print("[{}] WiFi Signal Strength: {} dBm".format(get_timestamp(), rssi))
+                
+                # Update display if available
+                if display:
+                    display.update_rssi(rssi)
+            else:
+                print("[{}] WiFi Signal Strength: Not connected".format(get_timestamp()))
+                
+                # Reset EWMA filter when disconnected
+                if rssi_ewma_filter:
+                    rssi_ewma_filter.reset()
+                
+                # Update display to show no signal if available
+                if display:
+                    display.update_rssi(None)
+            
+            # Wait 1 second before next check
+            await asyncio.sleep(1)
+            
+        except Exception as e:
+            print("[{}] WiFi signal monitor error: {}".format(get_timestamp(), e))
+            await asyncio.sleep(1)  # Wait before retrying
+
 
 
 async def heartbeat_blink_task(display, heartbeat_monitor, mag_heading_monitor):
@@ -1260,11 +1502,21 @@ if __name__ == "__main__":
                                                           tolerance=MAG_HEADING_TOLERANCE,
                                                           debug=MAG_HEADING_DEBUG)
         
-        # Create and run both tasks concurrently
+        # Create RSSI EWMA filter if enabled
+        rssi_ewma_filter_instance = EWMAFilter(RSSI_EWMA_ALPHA) if ENABLE_RSSI_EWMA else None
+        
+        # Create and run all tasks concurrently
         async def main():
             tasks = [monitor(display_instance, heartbeat_monitor_instance, mag_heading_monitor_instance)]
+            
+            # Add display blink task if display is available
             if display_instance and display_instance.graphics:
                 tasks.append(heartbeat_blink_task(display_instance, heartbeat_monitor_instance, mag_heading_monitor_instance))
+            
+            # Add WiFi signal monitoring task (pass display for RSSI bars)
+            tasks.append(wifi_signal_monitor_task(display_instance, rssi_ewma_filter_instance))
+
+            
             await asyncio.gather(*tasks)
         
         asyncio.run(main())
