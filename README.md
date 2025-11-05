@@ -45,6 +45,10 @@ LED matrix displays are bright, inexpensive, readily availble and update quickly
 
 I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The finer 2mm pitch offers higher LED density and a compact package. This software only supports 64x64. The 128x64 2mm pitch panels are large for my boat.
 
+### Display Sources ###
+[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit.
+
+
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12v system. It can be powered from a USB-C cable or a simple 5v power cable.
 LED matrix displays can use a lot of power, dependent on the display size and how many LEDs are turned on. For a text-only display the power consumption is reasonable.
