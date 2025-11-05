@@ -23,7 +23,7 @@ __Standby Mode:__
 
 __Auto Mode:__
 * The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
-* The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic.
+* The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic. On the Tiller Pilot screen, this display replaces the C + mag heading..this display shows both.
 * A third line is reservered for future changes.
 
 __Status Indicators:__\
