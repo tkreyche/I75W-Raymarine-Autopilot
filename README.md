@@ -43,12 +43,10 @@ The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board
 ### LED Matrix Display
 LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). They come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
 
-I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The finer 2mm pitch offers higher LED density and a compact package. This software only supports 64x64. The 128x64 2mm pitch panels are large for my boat.
+I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The 2mm pitch offers higher LED density and a compact package. This software only supports 64x64. The 128x64 2mm pitch panels are large for my boat.
 
 ### Display Sources ###
-[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) 
-
-
+[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) if you want the details. The same display shows up on Amazon and direct China sites such as AliExpress. When you order, pay attention to the LED pitch. [Here's a link that worked](https://www.aliexpress.us/item/3256801763739168.html) for me about 6 months ago.
 
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12v system. It can be powered from a USB-C cable or a simple 5v power cable.
