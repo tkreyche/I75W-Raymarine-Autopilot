@@ -27,7 +27,7 @@ __Auto Mode:__
 * A third line is reservered for future changes.
 
 __Status Indicators:__\
-All status indicators are on the bottom four rows of the display.
+Status indicators are on the bottom four rows of the display, and are the same for both Standby and Auto modes.
 * The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not. It uses a custom Signal K heartbeat, described later.
 * The lower right corner status light is steady green if the Tillerpilot magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * There is a blinking white status indicator in the center that indicates that the firmware on the board is running.
