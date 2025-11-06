@@ -42,7 +42,7 @@ The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board
 * Other boards are available from various vendors that include a Hub 75 interface, for the Raspberry Pi, ESP-32 and others. This code only runs on the [Pimoroni board, more details here](https://learn.pimoroni.com/article/getting-started-with-interstate-75#introduction).
 
 ### LED Matrix Display
-Displays come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. I prefer the 64x64 2mm pitch displays, which are 128x128mm in physical size, and provide higher LED density. When trying to outshine the sun brighter if better. A 3mm pitch display has the same number of LEDS but in a 196x196mm size.
+Displays come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. I prefer the 64x64 2mm pitch displays, which are 128x128mm in physical size, and provide higher LED density. When trying to outshine the sun brighter if better. A 3mm pitch display has the same number of LEDS but in a 196x196mm size. You may see the pitch referred to as P2, P2.5, P3 etc, especially for large video walls, and they will also refer to pixels per square meter.
 
 This software supports a single 64x64 (4096) pixel display since my small boat has limited space. The Pimoroni I75W will support up to 256X64 or 128x128 (16,384) pixels with chained panels, if a larger display fits your boat, you can handle the power consumption and you are inclined to modify the software. 
 
