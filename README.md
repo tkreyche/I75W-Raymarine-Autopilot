@@ -47,9 +47,7 @@ Displays come in various LED configurations, such as 32x32, 64x32, 128x64 etc. T
 This software supports a single 64x64 (4096) pixel display since my small boat has limited space. The Pimoroni I75W will support up to 256X64 or 128x128 (16,384) pixels with chained panels, if a larger display fits your boat, power consumption and ability to modify the software. 
 
 ### Display Sources ###
-[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) if you want details. The same display shows up on Amazon and direct China sites such as AliExpress. When you order, pay attention to the LED pitch. [Here's a link that worked](https://www.aliexpress.us/item/3256801763739168.html) for me recently.
-
-Make sure the boards use the common Hub 75 hardware interface. 
+[Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) if you want details. The same display shows up on many distributions, including Amazon and from China on AliExpress. [Here's a link that worked](https://www.aliexpress.us/item/3256801763739168.html) for me recently. Double check the pixel density before you order, and make sure the boards use the Hub 75 hardware interface. 
 
 ### Power Requirement
 The hardware runs on 5v and will need a voltage coverter for a 12v system. It can be powered from a USB-C cable or a simple 5v power cable.
