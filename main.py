@@ -1,4 +1,9 @@
-# Simple WebSocket Frame Monitor - Raw frames with timestamps
+
+# ============================================================================
+# IMPORTS
+# ============================================================================
+
+
 import secrets
 import time
 import network
@@ -17,7 +22,8 @@ _gc_collect = gc.collect
 _gc_threshold = gc.threshold
 
 # Configure GC for better performance (keep auto-GC as safety net)
-_gc_threshold(8192)  # Raise threshold to reduce auto-GC interruptions (default ~2048)
+# Raise threshold to reduce auto-GC interruptions (default ~2048)
+_gc_threshold(8192)  
 
 try:
     import json
@@ -127,32 +133,34 @@ GC_COLLECT_INTERVAL = getattr(secrets, 'GC_COLLECT_INTERVAL', 100)
 
 # Display settings
 ENABLE_DISPLAY = getattr(secrets, 'ENABLE_DISPLAY', True) and DISPLAY_AVAILABLE
-TEXT_SCALE = const(0.75)     # Scale for all text
-TEXT_THICKNESS = const(2)   # Thickness for better visibility on LED matrix
+TEXT_SCALE = const(1)     # Scale for all text
+TEXT_THICKNESS = const(3)   # Thickness for better visibility on LED matrix
+
+# Colors
 COLOR_WHITE = (255, 255, 255)
+COLOR_GREEN_BRIGHT = (0, 255, 0)
+COLOR_BLUE_BRIGHT = (0, 150, 255)
+COLOR_RED_BRIGHT = (255, 110, 0)
+COLOR_RED_DIM = (0, 0, 0)  # Off when blinking
+
 
 # Status indicator settings
 INDICATOR_BLINK_INTERVAL = getattr(secrets, 'INDICATOR_BLINK_INTERVAL', 500)  # ms between blinks
 INDICATOR_LEFT_X = const(0)
 INDICATOR_RIGHT_X = const(54)  # Right side (64 - 10 = 54)
-INDICATOR_Y = const(60)
+INDICATOR_Y = const(59)
 INDICATOR_WIDTH = const(10)
-INDICATOR_HEIGHT = const(4)
+INDICATOR_HEIGHT = const(5)
 INDICATOR_CENTER_X = const(31)  # Center (64 / 2 - 1 = 31, for 1-pixel wide centered indicator)
 INDICATOR_RUNNING_WIDTH = const(1)  # Running indicator is 1 pixel wide
 
-# Indicator colors
-COLOR_GREEN_BRIGHT = (0, 255, 0)
-COLOR_BLUE_BRIGHT = (0, 127, 255)
-COLOR_RED_BRIGHT = (255, 110, 0)
-COLOR_RED_DIM = (0, 0, 0)  # Off when blinking
 
 # RSSI bar indicator settings
 RSSI_BAR_START_X = const(16)  # Start column for RSSI bars
 RSSI_BAR_COUNT = const(5)      # Number of bars (1-5)
 RSSI_BAR_WIDTH = const(1)      # Each bar is 1 pixel wide
-RSSI_BAR_HEIGHT = const(4)     # Bars are 4 pixels high
-RSSI_BAR_Y = const(60)         # Bottom row (same as other status indicators)
+RSSI_BAR_HEIGHT = const(5)     # Bars are 4 pixels high
+RSSI_BAR_Y = const(59)         # Bottom row (same as other status indicators)
 
 
 # ============================================================================
@@ -261,10 +269,10 @@ class MessageDeduplicator:
 
 # ============================================================================
 # DISPLAY MANAGER
+# Manages the Interstate 75 W LED matrix display
 # ============================================================================
 
 class DisplayManager:
-    """Manages the Interstate 75 W LED matrix display."""
     
     def __init__(self):
         """Initialize the display."""
@@ -317,7 +325,7 @@ class DisplayManager:
             self.graphics.set_pen(self.pen_black)
             self.graphics.clear()
             self.graphics.set_pen(self.pen_white)
-            self.graphics.text("INIT", 4, 10, scale=TEXT_SCALE)
+            self.graphics.text("INIT", 4, 16, scale=TEXT_SCALE)
             
             # Draw initial indicators (both red until data received)
             self._draw_heartbeat_indicator()
@@ -450,20 +458,11 @@ class DisplayManager:
             
         except Exception as e:
             print("Running indicator draw error: {}".format(e))
-    
+  
+    # Draw the RSSI signal strength bars in the status area
+    # Each bar is 1 pixel wide and 4 pixels high, positioned at columns 16-20.    
     def _draw_rssi_bars(self):
-        """Draw the RSSI signal strength bars in the status area.
-        
-        Draws 0-5 bars based on WiFi signal strength:
-        - 5 bars: -30 to -50 dBm (Excellent)
-        - 4 bars: -50 to -60 dBm (Good)
-        - 3 bars: -60 to -67 dBm (Fair)
-        - 2 bars: -67 to -70 dBm (Weak)
-        - 1 bar:  -70 to -80 dBm (Very weak)
-        - 0 bars: worse than -80 dBm
-        
-        Each bar is 1 pixel wide and 4 pixels high, positioned at columns 16-20.
-        """
+
         if not self.graphics:
             return
         
@@ -563,14 +562,7 @@ class DisplayManager:
     
     def update_rssi(self, rssi_dbm):
         """Update RSSI signal strength bars.
-        
-        Args:
-            rssi_dbm: WiFi signal strength in dBm (typically -30 to -90)
-        """
-        if not self.graphics:
-            return
-        
-        try:
+
             # Determine number of bars based on signal strength
             # 5 bars: -30 to -50 dBm (Excellent)
             # 4 bars: -50 to -60 dBm (Good)
@@ -578,6 +570,12 @@ class DisplayManager:
             # 2 bars: -67 to -70 dBm (Weak)
             # 1 bar:  -70 to -80 dBm (Very weak)
             # 0 bars: worse than -80 dBm
+            rssi_dbm: WiFi signal strength in dBm (typically -30 to -90)
+        """
+        if not self.graphics:
+            return
+        
+        try:
             
             if rssi_dbm is None:
                 bars = 0
@@ -611,23 +609,28 @@ class DisplayManager:
         try:
             # Clear the top and middle sections (rows 0-42)
             self.graphics.set_pen(self.pen_black)
-            self.graphics.rectangle(0, 0, 64, 43)
+            self.graphics.rectangle(0, 0,63, 55)
             
             # Draw the current heading (top section) if available
             if self.last_heading is not None:
                 heading_str = "{:03d}".format(self.last_heading)
-                text = "C{}".format(heading_str)
+                #text = "C{}".format(heading_str)
+                # modification
+                text = "{}".format(heading_str)                
                 
                 self.graphics.set_pen(self.pen_white)
-                self.graphics.text(text, 4, 10, scale=TEXT_SCALE)
+                
+                self.graphics.text(text, 0, 12, scale=TEXT_SCALE)
             
             # Draw the target heading (middle section) ONLY if in auto mode
             if self.autopilot_state == "auto" and self.last_target is not None:
                 target_str = "{:03d}".format(self.last_target)
-                text = "A{}".format(target_str)
+                #text = "A{}".format(target_str)
+                # modification
+                text = "{}".format(target_str)               
                 
                 self.graphics.set_pen(self.pen_white)
-                self.graphics.text(text, 4, 31, scale=TEXT_SCALE)
+                self.graphics.text(text, 0, 40, scale=TEXT_SCALE)
             
             # Redraw heartbeat indicator after clearing display
             self._draw_heartbeat_indicator()
