@@ -37,14 +37,14 @@ The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board
 
 ### Controller Board
 * This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth. The board plugs directly into the display, eliminating a ribbon cable. The Pimoroni board can handle displays up to 
-* Other boards are available from various vendors that include a Hub 75 interface, for the Raspberry Pi, ESP-32 and others. This code only runs on the [Pimoroni board, see this overview for details](https://learn.pimoroni.com/article/getting-started-with-interstate-75#introduction).
+* Other boards are available from various vendors that include a Hub 75 interface, for the Raspberry Pi, ESP-32 and others. This code only runs on the [Pimoroni board, more details here](https://learn.pimoroni.com/article/getting-started-with-interstate-75#introduction).
 
 ### LED Matrix Display
 LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). They come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
 
 I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The 2mm pitch offers higher LED density and a compact package - you're trying to outshine the sun so brighter the better.. A 3mm pitch display has the same number of LEDS but in a 196x196mm size. The 128x64 2mm pitch panels are large for my small boat at 128x256mm.
 
-This software only supports 64x64...with the limited number of pixels 64x64 = 4096 it's not worth the trouble to build support for multiple display and font. 
+This software only supports a single 64x64 (4096) pixel display. The Pimoroni I75W will support up to 256X64 or 128x128 (16,384) pixels with chained panels, if a larger display fits your boat and you are inclined to modify the software.
 
 ### Display Sources ###
 [Waveshare distributes a variety of displays](https://www.waveshare.com/rgb-matrix-p2-64x64.htm), including the 64x64 2mm pitch unit. They also have an [excellent wiki](https://www.waveshare.com/wiki/RGB-Matrix-P2-64x64) if you want details. The same display shows up on Amazon and direct China sites such as AliExpress. When you order, pay attention to the LED pitch. [Here's a link that worked](https://www.aliexpress.us/item/3256801763739168.html) for me recently.
