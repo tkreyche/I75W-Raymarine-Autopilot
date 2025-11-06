@@ -18,12 +18,12 @@ This project gives you a remote display, but it only solves half the problem. Us
 The display emulates what is shown on the Tillerpilot screen, and only supports the two primary modes: Standby and Auto. There are additional status indicators.
 
 __Standby Mode:__
-* The top line show "C" (for compass) and the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this navigation.headingMagnetic. The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
+* The top line shows the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this navigation.headingMagnetic. The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
 * No other lines are shown.
 
 __Auto Mode:__
 * The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
-* The middle line shows "A" (for Auto) and the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic. On the Tiller Pilot screen, this display replaces the C + mag heading..this display shows both.
+* The next line shows the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this steering.autopilot.target.headingMagnetic. On the Tiller Pilot screen, this display replaces the C + mag heading..this display shows both.
 * A third line is reservered.
 
 __Status Indicators:__\
