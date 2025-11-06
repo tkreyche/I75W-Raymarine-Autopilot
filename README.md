@@ -1,4 +1,4 @@
-## TP-Matrix: I75W LED Matrix Display for the Raymarine Tiller Pilot
+## I75W LED Matrix Display for the Raymarine Tiller Pilot
 
 <img src="stby_mode_sm.jpg" width="300"><img src="auto_mode_sm.jpg" width="300">
 
