@@ -15,7 +15,7 @@ A Tiller Pilot is typically mounted near the stern of a boat, where it can be in
 This project gives you a remote display, but it only solves half the problem. Using this display with a [Nauti-Control ST control](https://nauti-control.com/) module and a handheld wireless keypad give you a complete remote solution. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
 ### What the Display Shows
-The display emulates what is shown on the Tillerpilot screen, and only supports the Standby and Auto primary modes of operation. A few additional status indicators are shown in all cases.
+The display emulates what is shown on the Tillerpilot screen, and only supports the Standby and Auto primary modes of operation. A few additional status indicators are shown.
 
 __Standby Mode:__
 * The top line shows the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this "navigation.headingMagnetic." The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
@@ -26,14 +26,14 @@ __Auto Mode:__
 * The mid line shows the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this "steering.autopilot.target.headingMagnetic." 
 
 __Status Indicators:__\
-Status indicators are on the bottom four rows of the display, and are the same in all modes.
-* The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not. It uses a custom Signal K heartbeat, described later.
-* The lower right corner status light is steady green if the Tillerpilot magentic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
-* There is a blinking white status indicator in the center that indicates that the firmware on the board is running.
+Status indicators show communications state at the bottom of the display, and are the same in all modes.
+* The lower left corner status light is steady green if it's receiving data from the Signal K server, and flashes orange if it is not. It uses a custom Signal K heartbeat sginal, described later.
+* The lower right corner status light is steady green if the Tillerpilot magnetic heading is updating, and flashes orange if it is not. You may see it flash if the boat is stationary.
 * WIFI signal strength is shown in light blue in the left-center of the status area. The bars are the same height, with 0=none, 1=poor, 2=weak, 3=fair, 4=good, 5=excellent.
+* * There is a blinking white status indicator in the center that indicates that the firmware on the board is running.
 
 ### Hardware Overview
-The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are bright and commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples...this project emulates the Tiller Pilot and mostly uses text.
+The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are bright, have a wide viewing angle and commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples...this project emulates the Tiller Pilot and mostly uses text.
 
 ### Controller Board
 * This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth. The board plugs directly into the display, eliminating a ribbon cable.
