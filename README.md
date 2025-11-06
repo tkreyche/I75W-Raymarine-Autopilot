@@ -92,6 +92,7 @@ With a Tillerpilot connected correctly, you should see the following paths in th
 
 ### Software Description 
 The code is written in Micropython with the help of Claude.ai. The code runs on single RP2350 core, and profiling shows there is plenty of headroom.
+It uses an asynchronous I/O scheduler, a common technique for networking applications.
 The connection uses the Signal K websockets interface for lowest latency communications.
 Retry logic is used for the wireless LAN connection and for the websocket connection to the Signal K server.
 The wireless configuration supports both DHCP and a static IP address.
