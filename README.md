@@ -43,7 +43,7 @@ The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board
 ### LED Matrix Display
 LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). They come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
 
-I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The 2mm pitch offers higher LED density and a compact package. A 3mm pitch display has the same number of LEDS but in a 196x196mm size. The 128x64 2mm pitch panels are large for my boat at ...TK
+I'm using 64x64 matrix displays with 2mm pitch, which are 128x128mm in physical size. The 2mm pitch offers higher LED density and a compact package - you're trying to outshine the sun so brighter the better.. A 3mm pitch display has the same number of LEDS but in a 196x196mm size. The 128x64 2mm pitch panels are large for my small boat at 128x256mm.
 
 This software only supports 64x64...with the limited number of pixels 64x64 = 4096 it's not worth the trouble to build support for multiple display and font. 
 
