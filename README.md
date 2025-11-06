@@ -22,7 +22,7 @@ __Standby Mode:__
 * The mid line is not shown.
 
 __Auto Mode:__
-* The top line is the same as in Standby Mode:  C (for compass) and the magnetic compass heading.
+* The top line is the same as in Standby Mode and shows the magnetic compass heading.
 * The mid line shows the target heading. Raymarine calls this the "locked autopilot heading." Signal K calls this "steering.autopilot.target.headingMagnetic." 
 
 __Status Indicators:__\
@@ -33,11 +33,11 @@ Status indicators show communications state at the bottom of the display, and ar
 * * There is a blinking white status indicator in the center that indicates that the firmware on the board is running.
 
 ### Hardware Overview
-The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are bright, have a wide viewing angle and commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples...this project emulates the Tiller Pilot and mostly uses text.
+The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board, a separate LED Matrix Display and a couple cables. Maxtrix displays are bright, have a wide viewing angle and commonly used for outdoor signage. The system is capable of fancy graphics - Pimoroni has examples...this project emulates the Tiller Pilot and mostly uses text. The ideal e-ink display for DIY sailing electronics has yet to appear.
 
 ### Controller Board
-* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth. The board plugs directly into the display, eliminating a ribbon cable.
-* Other boards are available that include a Hub 75 interface, from Adafruit and other vendors for the Raspberry Pi and ESP-32. This code only runs on the Pimoroni board.
+* This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth. The board plugs directly into the display, eliminating a ribbon cable. The Pimoroni board can handle displays up to 
+* Other boards are available from various vendors that include a Hub 75 interface, for the Raspberry Pi, ESP-32 and others. This code only runs on the [Pimoroni board, see this overview for details](https://learn.pimoroni.com/article/getting-started-with-interstate-75#introduction).
 
 ### LED Matrix Display
 LED matrix displays are bright, inexpensive, readily availble and update quickly (unlike eink). They come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. They interface with a controller via a Hub 75 hardware interface. Panels can be chained to create a larger display, limited by controller board and power consumption. 
