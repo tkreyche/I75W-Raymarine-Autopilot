@@ -11,6 +11,8 @@ This project is for DIY sailors who have skills and interest in electronics proj
 ### General Description ###
 This project uses custom software with off-the-shelf hardware to create an remote daylight-visible display, to make it easier to operate a [Raymarine ST1000+ or ST2000+ Tiller Pilot](https://www.raymarine.com/en-us/our-products/boat-autopilots/autopilot-packs/st1000-st2000). They are widely used and a relatively low-cost solution for automated steering, despite issues such as minimal waterproofing, hard end stops and an outdated communications protocol. A more complex DIY autopilot solution is pyPilot, which is not covered here.
 
+This implementation requires a Signal K server, commonly run on a Raspberry Pi.
+
 A Tiller Pilot is typically mounted near the stern of a boat, where it can be inconvenient to view the display and operate the buttons. It's near impossible in boat that's heeling excessively.
 This project gives you a remote display, but it only solves half the problem. Using this display with a [Nauti-Control ST control](https://nauti-control.com/) module and a handheld wireless keypad give you a complete remote solution. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
