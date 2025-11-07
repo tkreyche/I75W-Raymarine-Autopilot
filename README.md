@@ -13,7 +13,7 @@ This project uses custom software with off-the-shelf hardware to create an remot
 
 This implementation requires a Signal K server, commonly used with DIY boat networks running on a Raspberry Pi. Signal K running on other operating systems should work alos.
 
-A Tiller Pilot is typically mounted near the stern of a boat, where it can be inconvenient to view the display and operate the buttons. It's near impossible in boat that's heeling excessively.
+A Tiller Pilot is typically mounted near the stern of a boat, where it can be inconvenient to view the display and operate the buttons. It's nearly impossible in boat that's heeling excessively.
 This project gives you a remote display, but it only solves half the problem. Using this display with a [Nauti-Control ST control](https://nauti-control.com/) module and a handheld wireless keypad give you a complete remote solution. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
 ### What the Display Shows
