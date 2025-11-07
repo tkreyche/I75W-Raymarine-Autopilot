@@ -75,10 +75,10 @@ This installation assumes you already have Signal K running on a Raspberry Pi. I
 With a Tillerpilot connected correctly, you should see the following paths in the Signal K Data Browser. In the images below, data connection is Seatalk via a MacArthur hat, and the configured data source ID is ST2000.
 
 * environment.heartbeat (this is from the heatbeat script)
-* navigation.headingMagnetic (from ST1000+)
-* navigation.magneticVariation (from ST1000+)
-* steering.autopilot.state (from ST1000+)
-* steering.autopilot.target.headingMagnetic (from ST1000+ after the Tillerpilot's been put in Auto Mode)
+* navigation.headingMagnetic (from ST2000+)
+* navigation.magneticVariation (from ST2000+)
+* steering.autopilot.state (from ST2000+)
+* steering.autopilot.target.headingMagnetic (from ST2000+ after the Tiller Pilot's been put in Auto Mode)
 
 <img src="data_browser.png" width="800">
 <img src="data_connection.png" width="800">
