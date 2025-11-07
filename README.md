@@ -39,7 +39,7 @@ The hardware is off-the-shelf and requires a Pimoroni I75W microcontroller board
 
 ### Controller Board
 * This project uses a [Pimoroni board](https://shop.pimoroni.com/products/interstate-75-w?variant=54977948713339) with a Hub 75 hardware interface for the LED matrix display. It's reliable, fast and includes a custom micropython build with the matrix drivers, wifi and Bluetooth. The board plugs directly into the display, eliminating a ribbon cable. The Pimoroni board can handle displays up to 
-* Other boards are available from various vendors that include a Hub 75 interface, for the Raspberry Pi, ESP-32 and others. This code only runs on the [Pimoroni board, more details here](https://learn.pimoroni.com/article/getting-started-with-interstate-75#introduction).
+* Other boards are available from various vendors that include a Hub 75 interface, for the Raspberry Pi, ESP32 and others. This code only runs on the [Pimoroni board, more details here](https://learn.pimoroni.com/article/getting-started-with-interstate-75#introduction).
 
 ### LED Matrix Display
 Displays come in various LED configurations, such as 32x32, 64x32, 128x64 etc. The physical dimensions are dependent on the LED pitch, for example 3, 2.5 and 2mm. I prefer the 64x64 2mm pitch displays, which are 128x128mm in physical size, and provide higher LED density. When trying to outshine the sun brighter if better. A 3mm pitch display has the same number of LEDS but in a 196x196mm size. You may see the pitch referred to as P2, P2.5, P3 etc, especially for large video walls, and they will also refer to pixels per square meter.
