@@ -64,7 +64,7 @@ There may be future options to send Tillerpilot data from a NautiControl ST Wire
 
 ### Raspberry Pi and Signal K
 Signal K runs well on a Raspberry Pi 4B or 5, dependent on how many other devices are connected and sending data, such as running a NEMA 2000 backbone. 
-The hardware in this project can connect directly to the wifi module on the Pi in Access Point mode. Auto power should be disabled and other tweaks may be necessary. 
+The microcontroller in this project can connect to the a Pi in Access Point mode. Auto power should be disabled and other tweaks may be necessary. Distance is limited due to minimal antennas.
 An alternative solution is to use a wifi travel router connected to the Pi with an ethernet cable. Of course this is more equipment to maintain. 
 
 ### Signal K Software Installation
