@@ -17,7 +17,7 @@ A Tiller Pilot is typically mounted near the stern of a boat, where it can be in
 This project gives you a remote display, but it only solves half the problem. Using this display with a [Nauti-Control ST control](https://nauti-control.com/) module and a handheld wireless keypad give you a complete remote solution. NautiControl has a mobile phone UI, but I can't manage that singlehanded in typical sailing conditions.
 
 ### What the Display Shows
-The display emulates what is shown on the Tillerpilot screen, and only supports the Standby and Auto primary modes of operation. A few additional status indicators are shown.
+The display emulates what is shown on the Tillerpilot screen, and only supports the Standby and Auto primary modes. A few additional status indicators are shown.
 
 __Standby Mode:__
 * The top line shows the magnetic compass heading. Raymarine calls this "the boat’s current compass heading." Signal K calls this "navigation.headingMagnetic." The value is dependent on Tillerpilot calibration and will probably differ from magnetic heading sent from other instruments.
